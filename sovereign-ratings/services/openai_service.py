@@ -54,6 +54,8 @@ PILLAR SCORING (0 = worst, 100 = best):
 
 COMPOSITE WEIGHT: Economic 25% + Fiscal 25% + External 20% + Monetary 10% + Banking 10% + Political 10%
 
+For each pillar's "summary" field, write approximately 500 words across 5-6 paragraphs of thorough analytical prose. Each paragraph should develop a distinct theme. Separate paragraphs with \\n\\n inside the JSON string.
+
 Respond ONLY with valid JSON matching this EXACT structure (no extra keys, no markdown):
 {{
   "rating": "BBB",
@@ -69,32 +71,32 @@ Respond ONLY with valid JSON matching this EXACT structure (no extra keys, no ma
   "rationale": "2-3 sentence overall summary explaining the rating.",
   "pillar_analysis": {{
     "economic_strength": {{
-      "summary": "3-5 sentences analysing the economic outlook, growth drivers, structural strengths and vulnerabilities.",
+      "summary": "Paragraph 1: GDP growth trajectory and drivers...\\n\\nParagraph 2: Per-capita income levels and convergence prospects...\\n\\nParagraph 3: Structural composition and diversification...\\n\\nParagraph 4: Labour market dynamics and competitiveness...\\n\\nParagraph 5: Key vulnerabilities and outlook...",
       "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
       "risks": ["Specific risk 1", "Specific risk 2", "Specific risk 3"]
     }},
     "fiscal_position": {{
-      "summary": "3-5 sentences on fiscal dynamics, debt trajectory, deficit path and consolidation prospects.",
+      "summary": "Paragraph 1: Debt-to-GDP trajectory...\\n\\nParagraph 2: Deficit dynamics and revenue capacity...\\n\\nParagraph 3: Spending composition and efficiency...\\n\\nParagraph 4: Contingent liabilities and off-balance sheet risks...\\n\\nParagraph 5: Fiscal consolidation prospects and sustainability...",
       "strengths": ["...", "...", "..."],
       "risks": ["...", "...", "..."]
     }},
     "external_position": {{
-      "summary": "3-5 sentences on current account, reserves, external debt and BoP resilience.",
+      "summary": "Paragraph 1: Current account balance and drivers...\\n\\nParagraph 2: FX reserve adequacy...\\n\\nParagraph 3: External debt structure and rollover risk...\\n\\nParagraph 4: Trade composition and partners...\\n\\nParagraph 5: Vulnerability to external shocks...",
       "strengths": ["...", "...", "..."],
       "risks": ["...", "...", "..."]
     }},
     "monetary_policy": {{
-      "summary": "3-5 sentences on inflation, monetary framework, exchange rate and CB credibility.",
+      "summary": "Paragraph 1: Inflation record and outlook...\\n\\nParagraph 2: Central bank independence and credibility...\\n\\nParagraph 3: Exchange rate regime and FX stability...\\n\\nParagraph 4: Monetary transmission effectiveness...\\n\\nParagraph 5: Interest rate dynamics and currency risks...",
       "strengths": ["...", "...", "..."],
       "risks": ["...", "...", "..."]
     }},
     "banking_sector": {{
-      "summary": "3-5 sentences on banking system health, stability, credit conditions and systemic risks.",
+      "summary": "Paragraph 1: System-wide capital adequacy...\\n\\nParagraph 2: Asset quality and NPL trends...\\n\\nParagraph 3: Liquidity conditions and credit growth...\\n\\nParagraph 4: Profitability and regulatory framework...\\n\\nParagraph 5: Systemic risk and sovereign contingent liabilities...",
       "strengths": ["...", "...", "..."],
       "risks": ["...", "...", "..."]
     }},
     "political_governance": {{
-      "summary": "3-5 sentences on institutional quality, political stability, rule of law and governance.",
+      "summary": "Paragraph 1: Political stability and government continuity...\\n\\nParagraph 2: Institutional quality and rule of law...\\n\\nParagraph 3: Corruption levels and regulatory effectiveness...\\n\\nParagraph 4: Government effectiveness and policy coherence...\\n\\nParagraph 5: Geopolitical risks and international relations...",
       "strengths": ["...", "...", "..."],
       "risks": ["...", "...", "..."]
     }}
@@ -112,7 +114,7 @@ Respond ONLY with valid JSON matching this EXACT structure (no extra keys, no ma
 ## Analyst Memory Notes
 {mem_text}
 
-Rate {country_name} and provide full pillar-by-pillar analysis."""
+Rate {country_name} and provide full pillar-by-pillar analysis with ~500 words per pillar."""
 
     client = get_openai_client()
     completion = await client.chat.completions.create(
