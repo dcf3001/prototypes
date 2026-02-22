@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Sovereign Ratings Agency{% endblock %}
+
+{% block content %}
+<div class="flex justify-between align-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="page-title">Sovereign Ratings Dashboard</h1>
+    <p class="page-subtitle">Global sovereign credit ratings powered by GPT-4o + World Bank data</p>
+  </div>
+  <div class="flex gap-2 flex-wrap">
+    <button class="btn btn-blue" onclick="triggerJob('/api/jobs/sync-news','News Sync')">Sync News</button>
+    <button class="btn btn-green" onclick="triggerJob('/api/jobs/sync-wb','World Bank Sync')">Sync World Bank</button>
+    <button class="btn btn-purple" onclick="triggerJob('/api/jobs/rerate-all','AI Re-rate All')">Re-rate All</button>
+  </div>
+</div>
+
+<div id="job-msg" class="alert alert-info" style="display:none"></div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-label">Countries</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ rated }}</div>
+    <div class="stat-label">Rated</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#2e7d32">{{ ig }}</div>
+    <div class="stat-label">Investment Grade</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#c62828">{{ below_ig }}</div>
+    <div class="stat-label">Below IG</div>
+  </div>
+</div>
+
+<div class="filters">
+  <input id="search" class="filter-input" placeholder="Search by name or ISO…" oninput="filterTable()" style="min-width:220px">
+  <select id="regionFilter" class="filter-select" onchange="filterTable()">
+    <option value="">All Regions</option>
+    {% for r in regions %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+  </select>
+  <select id="categoryFilter" class="filter-select" onchange="filterTable()">
+    <option value="">All Categories</option>
+    <option value="Investment Grade">Investment Grade</option>
+    <option value="Sub-Investment Grade">Sub-Investment Grade</option>
+    <option value="Distressed">Distressed</option>
+    <option value="Unrated">Unrated</option>
+  </select>
+  <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Country</th>
+        <th>ISO</th>
+        <th>Region</th>
+        <th>Rating</th>
+        <th>Outlook</th>
+        <th>Score</th>
+        <th>Category</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody id="countries-tbody">
+      {% for c in countries %}
+      <tr class="clickable-row"
+          onclick="window.location='/country/{{ c.iso2 }}'"
+          data-name="{{ c.name|lower }}"
+          data-iso="{{ c.iso2|lower }}"
+          data-region="{{ c.region or '' }}"
+          data-category="{{ c.rating|rating_category }}">
+        <td style="font-weight:600">{{ c.name }}</td>
+        <td class="text-mono" style="font-size:13px">{{ c.iso2 }}</td>
+        <td style="font-size:12px;color:#546e7a">{{ c.region or '—' }}</td>
+        <td>
+          {% if c.rating %}
+            <span class="rating-badge" style="background:{{ c.rating|rating_color }}">{{ c.rating }}</span>
+          {% else %}
+            <span class="rating-badge-nr">N/R</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if c.outlook %}
+            <span class="outlook-badge" style="{{ c.outlook|outlook_style }}">{{ c.outlook }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="text-mono" style="font-size:13px;color:#546e7a">
+          {{ c.composite_score|fmt_num(1) }}
+        </td>
+        <td style="font-size:12px">{{ c.rating|rating_category }}</td>
+        <td style="font-size:12px;color:{% if c.source=='override' %}#e65100{% else %}#546e7a{% endif %}">
+          {{ c.source or '—' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div id="row-count" class="text-muted mt-2" style="font-size:12px;text-align:right">
+  {{ countries|length }} countries
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterTable() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const region = document.getElementById('regionFilter').value;
+  const cat    = document.getElementById('categoryFilter').value;
+  let visible = 0;
+  document.querySelectorAll('#countries-tbody tr').forEach(row => {
+    const ok = (!search || row.dataset.name.includes(search) || row.dataset.iso.includes(search))
+            && (!region || row.dataset.region === region)
+            && (!cat    || row.dataset.category === cat);
+    row.style.display = ok ? '' : 'none';
+    if (ok) visible++;
+  });
+  document.getElementById('row-count').textContent = visible + ' countries';
+}
+
+function clearFilters() {
+  document.getElementById('search').value = '';
+  document.getElementById('regionFilter').value = '';
+  document.getElementById('categoryFilter').value = '';
+  filterTable();
+}
+
+async function triggerJob(url, label) {
+  const msg = document.getElementById('job-msg');
+  msg.textContent = `Starting ${label}…`;
+  msg.style.display = 'block';
+  try {
+    const r = await fetch(url, { method: 'POST' });
+    const d = await r.json();
+    msg.textContent = d.message || `${label} started.`;
+  } catch(e) {
+    msg.className = 'alert alert-error';
+    msg.textContent = `Failed to start ${label}: ${e.message}`;
+  }
+  setTimeout(() => { msg.style.display = 'none'; msg.className = 'alert alert-info'; }, 5000);
+}
+</script>
+{% endblock %}
