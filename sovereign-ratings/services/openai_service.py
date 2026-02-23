@@ -14,7 +14,9 @@ _client = None
 def get_openai_client():
     global _client
     if _client is None:
-        _client = AsyncOpenAI()  # SDK auto-reads OPENAI_API_KEY from environment
+        # Read from SRA_OPENAI_KEY (Railway-safe name) or fall back to OPENAI_API_KEY
+        api_key = os.environ.get("SRA_OPENAI_KEY") or os.environ.get("OPENAI_API_KEY")
+        _client = AsyncOpenAI(api_key=api_key)
     return _client
 
 
