@@ -26,6 +26,8 @@ async def research_country(country_name: str) -> str:
     """
     try:
         client = get_openai_client()
+        if not hasattr(client, "responses"):
+            return ""
         response = await client.responses.create(
             model="gpt-4o",
             tools=[{"type": "web_search_preview"}],

@@ -26,7 +26,9 @@ async def trigger_ai_rating(iso2: str):
         result = await run_ai_rating(iso2.upper())
         return result
     except LookupError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{iso2}/override")
