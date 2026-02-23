@@ -14,7 +14,7 @@ _client = None
 def get_openai_client():
     global _client
     if _client is None:
-        _client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        _client = AsyncOpenAI()  # SDK auto-reads OPENAI_API_KEY from environment
     return _client
 
 
