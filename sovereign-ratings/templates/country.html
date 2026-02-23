@@ -158,7 +158,7 @@
       <div style="font-size:0.55rem;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:12px">Analysis</div>
       {% for para in analysis.get('summary','').split('\n\n') %}
         {% if para.strip() %}
-          <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:12px;font-family:'Playfair Display',serif;font-style:italic">{{ para.strip() }}</p>
+          <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:12px;font-family:'Libre Franklin',sans-serif">{{ para.strip() }}</p>
         {% endif %}
       {% endfor %}
     </div>
