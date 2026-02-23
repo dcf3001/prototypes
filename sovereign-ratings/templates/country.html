@@ -5,59 +5,60 @@
 {% set pa = country.pillar_analysis | parse_json if country.pillar_analysis else {} %}
 {% set f  = fundamentals[0] if fundamentals else none %}
 
-<a href="/" style="color:#1565c0;font-size:14px;display:inline-block;margin-bottom:16px">← Dashboard</a>
+<a href="/" style="color:var(--blue);font-size:0.7rem;display:inline-block;margin-bottom:14px;letter-spacing:0.04em">← Dashboard</a>
 
 <!-- ═══ HEADER CARD ══════════════════════════════════════════════════════════ -->
-<div class="card mb-4" style="border-top:4px solid {{ country.rating|rating_color if country.rating else '#9e9e9e' }}">
+<div class="card mb-4" style="border-top:3px solid {{ country.rating|rating_color if country.rating else 'var(--border2)' }}">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
     <div style="flex:1;min-width:0">
-      <h1 style="font-size:30px;font-weight:900;color:#0a1929;margin-bottom:4px">{{ country.name }}</h1>
-      <div style="font-size:13px;color:#546e7a;margin-bottom:14px">
+      <h1 style="font-size:1.9rem;font-weight:700;color:var(--ink);margin-bottom:4px;font-family:'Playfair Display',serif">{{ country.name }}</h1>
+      <div style="font-size:0.68rem;color:var(--ink3);margin-bottom:12px;font-family:'JetBrains Mono',monospace;letter-spacing:0.04em">
         {{ country.iso2 }} &nbsp;·&nbsp; {{ country.iso3 }} &nbsp;·&nbsp;
         {{ country.region or 'Unknown region' }} &nbsp;·&nbsp;
         {{ country.income_group or 'Unknown income group' }}
       </div>
 
       <!-- Rating row -->
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         {% if country.rating %}
-          <span class="rating-badge" style="background:{{ country.rating|rating_color }};font-size:22px;padding:6px 16px">
+          <span class="rating-badge" style="background:{{ country.rating|rating_color }};font-size:1.2rem;padding:5px 14px">
             {{ country.rating }}
           </span>
           {% if country.outlook %}
-            <span class="outlook-badge" style="{{ country.outlook|outlook_style }};padding:5px 12px;font-size:13px">
+            <span class="outlook-badge" style="{{ country.outlook|outlook_style }};padding:4px 10px;font-size:0.65rem">
               {{ country.outlook }}
             </span>
           {% endif %}
-          <span style="font-size:14px;color:#546e7a;font-family:monospace">
-            Score: <strong>{{ country.composite_score|fmt_num(1) }}</strong> / 100
+          <span style="font-size:0.72rem;color:var(--ink3);font-family:'JetBrains Mono',monospace">
+            Score: <strong style="color:var(--ink)">{{ country.composite_score|fmt_num(1) }}</strong> / 100
           </span>
-          <span style="font-size:12px;padding:3px 8px;border-radius:4px;
-            background:{% if country.rating|rating_category=='Investment Grade' %}#e8f5e9{% elif country.rating|rating_category=='Sub-Investment Grade' %}#fff8e1{% else %}#fce4ec{% endif %};
-            color:{% if country.rating|rating_category=='Investment Grade' %}#2e7d32{% elif country.rating|rating_category=='Sub-Investment Grade' %}#f57f17{% else %}#c62828{% endif %}">
+          <span style="font-size:0.62rem;padding:2px 8px;border-radius:2px;
+            background:{% if country.rating|rating_category=='Investment Grade' %}var(--green-bg){% elif country.rating|rating_category=='Sub-Investment Grade' %}var(--amber-bg){% else %}var(--red-bg){% endif %};
+            color:{% if country.rating|rating_category=='Investment Grade' %}var(--green){% elif country.rating|rating_category=='Sub-Investment Grade' %}var(--amber){% else %}var(--red){% endif %};
+            border:1px solid {% if country.rating|rating_category=='Investment Grade' %}var(--green-bdr){% elif country.rating|rating_category=='Sub-Investment Grade' %}var(--amber-bdr){% else %}var(--red-bdr){% endif %}">
             {{ country.rating|rating_category }}
           </span>
           {% if country.source %}
-            <span style="font-size:11px;color:{% if country.source=='override' %}#e65100{% else %}#9e9e9e{% endif %};font-style:italic">
+            <span style="font-size:0.6rem;color:{% if country.source=='override' %}var(--amber){% else %}var(--ink3){% endif %};font-style:italic;font-family:'JetBrains Mono',monospace">
               [{{ country.source }}{% if country.rated_at %} · {{ country.rated_at|fmt_date }}{% endif %}]
             </span>
           {% endif %}
         {% else %}
-          <span class="rating-badge-nr" style="font-size:18px;padding:5px 14px">Not Rated</span>
+          <span class="rating-badge-nr" style="font-size:1rem;padding:4px 12px">Not Rated</span>
         {% endif %}
       </div>
 
       <!-- Rationale snippet -->
       {% set rationale_text = country.override_rationale or country.ai_rationale %}
       {% if rationale_text %}
-        <div style="background:#f8fafc;border-left:3px solid #90caf9;border-radius:0 6px 6px 0;padding:10px 14px;font-size:13px;color:#2d3748;line-height:1.7;max-width:720px">
+        <div style="background:var(--blue-bg);border-left:3px solid var(--blue-bdr);border-radius:0 2px 2px 0;padding:10px 14px;font-size:0.72rem;color:var(--ink2);line-height:1.75;max-width:720px;font-family:'Playfair Display',serif;font-style:italic">
           {{ rationale_text }}
         </div>
       {% endif %}
     </div>
 
     <!-- Action buttons -->
-    <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;align-items:flex-end">
+    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end">
       <button id="rerate-btn" class="btn btn-blue" onclick="rerateWithAI('{{ country.iso2 }}')">
         ⟳ Re-rate with AI
       </button>
@@ -69,7 +70,7 @@
 </div>
 
 <!-- Action message bar -->
-<div id="action-msg" class="alert alert-info" style="display:none;margin-bottom:16px"></div>
+<div id="action-msg" class="alert alert-info" style="display:none;margin-bottom:14px"></div>
 
 <!-- ═══ TAB NAV ═══════════════════════════════════════════════════════════════ -->
 <div class="tabs" style="overflow-x:auto;white-space:nowrap">
@@ -86,31 +87,31 @@
 
 
 <!-- ═══ SUMMARY TAB ══════════════════════════════════════════════════════════ -->
-<div id="tab-summary" class="tab-panel active card">
+<div id="tab-summary" class="tab-panel active card" style="border-top:none;border-radius:0 0 2px 2px">
   {% if country.rating %}
-    <h3 style="font-size:13px;font-weight:700;color:#546e7a;text-transform:uppercase;letter-spacing:1px;margin-bottom:20px">Pillar Scorecard</h3>
+    <h3 style="font-size:0.55rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:18px">Pillar Scorecard</h3>
     {% set pillars = [
-      ('Economic Strength',   country.score_economic,  '#1565c0', 'economy'),
-      ('Fiscal Position',     country.score_fiscal,    '#6a1b9a', 'fiscal'),
-      ('External Position',   country.score_external,  '#00695c', 'external'),
-      ('Monetary Policy',     country.score_monetary,  '#e65100', 'monetary'),
-      ('Banking Sector',      country.score_banking,   '#c62828', 'banking'),
-      ('Political Governance',country.score_political, '#2e7d32', 'politics'),
+      ('Economic Strength',   country.score_economic,  '#1a3878', 'economy'),
+      ('Fiscal Position',     country.score_fiscal,    '#5a2d82', 'fiscal'),
+      ('External Position',   country.score_external,  '#1a6830', 'external'),
+      ('Monetary Policy',     country.score_monetary,  '#b06010', 'monetary'),
+      ('Banking Sector',      country.score_banking,   '#b02020', 'banking'),
+      ('Political Governance',country.score_political, '#1a6830', 'politics'),
     ] %}
     {% for label, score, color, tab_id in pillars %}
     {% set lvl = score_label(score) %}
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer"
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;cursor:pointer"
          onclick="switchTab('{{ tab_id }}', document.querySelector('.tab-btn[onclick*=\\'{{ tab_id }}\\']'))">
-      <span style="width:170px;font-size:13px;color:#2d3748;font-weight:600;flex-shrink:0">{{ label }}</span>
-      <div style="flex:1;height:12px;background:#e0e0e0;border-radius:6px;overflow:hidden">
-        <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:6px;transition:width .5s"></div>
+      <span style="width:170px;font-size:0.72rem;color:var(--ink2);font-weight:600;flex-shrink:0">{{ label }}</span>
+      <div style="flex:1;height:8px;background:var(--bg3);border-radius:1px;overflow:hidden">
+        <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:1px;transition:width .5s"></div>
       </div>
-      <span style="width:28px;font-size:14px;font-weight:800;font-family:monospace;text-align:right">{{ score|fmt_num(0) }}</span>
-      <span style="width:70px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;
-                   background:{{ lvl[1] }}22;color:{{ lvl[1] }};text-align:center">{{ lvl[0] }}</span>
+      <span style="width:28px;font-size:0.75rem;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--ink)">{{ score|fmt_num(0) }}</span>
+      <span style="width:70px;font-size:0.58rem;font-weight:600;padding:2px 7px;border-radius:2px;
+                   background:{{ lvl[1] }}22;color:{{ lvl[1] }};text-align:center;letter-spacing:0.04em">{{ lvl[0] }}</span>
     </div>
     {% endfor %}
-    <p style="font-size:12px;color:#9e9e9e;margin-top:16px">Click any row to open that pillar's detail tab.</p>
+    <p style="font-size:0.6rem;color:var(--ink3);margin-top:14px;letter-spacing:0.04em">Click any row to open that pillar's detail tab.</p>
   {% else %}
     <div class="empty">No rating yet — click "Re-rate with AI" to generate one.</div>
   {% endif %}
@@ -120,20 +121,20 @@
 <!-- ═══ PILLAR MACRO (inline, repeated for each pillar) ════════════════════ -->
 
 {% macro pillar_tab(tab_id, label, score, color, metrics, pa_key) %}
-<div id="tab-{{ tab_id }}" class="tab-panel">
+<div id="tab-{{ tab_id }}" class="tab-panel" style="border-top:none">
 
   <!-- Score hero -->
   {% set lvl = score_label(score) %}
-  <div style="background:linear-gradient(135deg,#f8fafc 0%,{{ color }}11 100%);border-radius:12px;padding:24px;margin-bottom:24px;border-left:5px solid {{ color }}">
-    <div style="font-size:11px;font-weight:800;color:#546e7a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">{{ label }}</div>
-    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px">
-      <span style="font-size:64px;font-weight:900;line-height:1;color:{{ color }}">{{ score|fmt_num(0) }}</span>
-      <span style="font-size:22px;color:#9e9e9e;font-weight:400">/100</span>
-      <span style="margin-left:8px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:20px;
-                   background:{{ lvl[1] }}22;color:{{ lvl[1] }}">{{ lvl[0] }}</span>
+  <div style="background:var(--bg2);border-radius:2px;padding:20px;margin-bottom:20px;border-left:4px solid {{ color }};border:1px solid var(--border);border-left:4px solid {{ color }}">
+    <div style="font-size:0.55rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:6px">{{ label }}</div>
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px">
+      <span style="font-size:3.5rem;font-weight:700;line-height:1;color:{{ color }};font-family:'JetBrains Mono',monospace">{{ score|fmt_num(0) }}</span>
+      <span style="font-size:1.2rem;color:var(--ink3);font-weight:400;font-family:'JetBrains Mono',monospace">/100</span>
+      <span style="margin-left:8px;font-size:0.62rem;font-weight:600;padding:3px 10px;border-radius:2px;
+                   background:{{ lvl[1] }}22;color:{{ lvl[1] }};letter-spacing:0.06em">{{ lvl[0] }}</span>
     </div>
-    <div style="height:10px;background:#e0e0e0;border-radius:5px;overflow:hidden">
-      <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:5px;transition:width .6s"></div>
+    <div style="height:6px;background:var(--bg3);border-radius:1px;overflow:hidden">
+      <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:1px;transition:width .6s"></div>
     </div>
   </div>
 
@@ -143,7 +144,7 @@
     {% for mlabel, mvalue in metrics %}
     <div class="fundamental-card">
       <div class="fundamental-label">{{ mlabel }}</div>
-      <div class="fundamental-value" style="font-size:20px">{{ mvalue }}</div>
+      <div class="fundamental-value" style="font-size:1.1rem">{{ mvalue }}</div>
       {% if f %}<div class="fundamental-year">{{ f.year }}</div>{% endif %}
     </div>
     {% endfor %}
@@ -153,41 +154,41 @@
   <!-- AI analysis -->
   {% set analysis = pa.get(pa_key, {}) %}
   {% if analysis and analysis.get('summary') %}
-    <div style="background:#fffbf0;border:1px solid #f0e6c8;border-radius:10px;padding:20px;margin-bottom:20px">
-      <div style="font-size:11px;font-weight:800;color:#946500;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">📊 Analysis</div>
+    <div style="background:var(--blue-bg);border:1px solid var(--blue-bdr);border-radius:2px;padding:18px;margin-bottom:18px">
+      <div style="font-size:0.55rem;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:12px">Analysis</div>
       {% for para in analysis.get('summary','').split('\n\n') %}
         {% if para.strip() %}
-          <p style="font-size:14px;line-height:1.85;color:#2d3748;margin-bottom:14px">{{ para.strip() }}</p>
+          <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:12px;font-family:'Playfair Display',serif;font-style:italic">{{ para.strip() }}</p>
         {% endif %}
       {% endfor %}
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <!-- Strengths -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px">
-        <div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:12px">✓ Strengths</div>
+      <div style="background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:2px;padding:16px">
+        <div style="font-size:0.6rem;font-weight:700;color:var(--green);margin-bottom:10px;letter-spacing:0.12em;text-transform:uppercase">Strengths</div>
         <ul style="list-style:none">
           {% for s in analysis.get('strengths', []) %}
-          <li style="font-size:13px;line-height:1.5;margin-bottom:8px;padding-left:18px;position:relative;color:#2d3748">
-            <span style="position:absolute;left:0;color:#15803d;font-weight:700">✓</span>{{ s }}
+          <li style="font-size:0.72rem;line-height:1.55;margin-bottom:7px;padding-left:16px;position:relative;color:var(--ink2)">
+            <span style="position:absolute;left:0;color:var(--green);font-weight:700">✓</span>{{ s }}
           </li>
           {% endfor %}
         </ul>
       </div>
       <!-- Risks -->
-      <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:18px">
-        <div style="font-size:13px;font-weight:800;color:#be123c;margin-bottom:12px">⚠ Risks</div>
+      <div style="background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:2px;padding:16px">
+        <div style="font-size:0.6rem;font-weight:700;color:var(--red);margin-bottom:10px;letter-spacing:0.12em;text-transform:uppercase">Risks</div>
         <ul style="list-style:none">
           {% for r in analysis.get('risks', []) %}
-          <li style="font-size:13px;line-height:1.5;margin-bottom:8px;padding-left:18px;position:relative;color:#2d3748">
-            <span style="position:absolute;left:0;color:#be123c;font-weight:700">!</span>{{ r }}
+          <li style="font-size:0.72rem;line-height:1.55;margin-bottom:7px;padding-left:16px;position:relative;color:var(--ink2)">
+            <span style="position:absolute;left:0;color:var(--red);font-weight:700">!</span>{{ r }}
           </li>
           {% endfor %}
         </ul>
       </div>
     </div>
   {% else %}
-    <div class="empty" style="padding:32px">
+    <div class="empty" style="padding:28px;border:1px solid var(--border);border-radius:2px;background:var(--surface)">
       No detailed analysis yet — click <strong>Re-rate with AI</strong> to generate pillar-level commentary.
     </div>
   {% endif %}
@@ -197,7 +198,7 @@
 
 <!-- ═══ ECONOMY TAB ══════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'economy', 'Economic Strength', country.score_economic, '#1565c0',
+  'economy', 'Economic Strength', country.score_economic, '#1a3878',
   [
     ('GDP Growth',      f.gdp_growth  | fmt_num(1, '%')   if f else '—'),
     ('GDP per Capita',  f.gdp_per_capita | fmt_num(0, '', '$') if f else '—'),
@@ -209,7 +210,7 @@
 
 <!-- ═══ FISCAL TAB ═══════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'fiscal', 'Fiscal Position', country.score_fiscal, '#6a1b9a',
+  'fiscal', 'Fiscal Position', country.score_fiscal, '#5a2d82',
   [
     ('Debt / GDP',      f.debt_gdp    | fmt_num(1, '%')   if f else '—'),
     ('Deficit / GDP',   f.deficit_gdp | fmt_num(1, '%')   if f else '—'),
@@ -220,7 +221,7 @@
 
 <!-- ═══ EXTERNAL TAB ═════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'external', 'External Position', country.score_external, '#00695c',
+  'external', 'External Position', country.score_external, '#1a6830',
   [
     ('Current Account / GDP', f.ca_gdp          | fmt_num(1, '%')     if f else '—'),
     ('FX Reserves',           f.reserves_months | fmt_num(1, ' months') if f else '—'),
@@ -231,7 +232,7 @@
 
 <!-- ═══ MONETARY TAB ══════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'monetary', 'Monetary Policy', country.score_monetary, '#e65100',
+  'monetary', 'Monetary Policy', country.score_monetary, '#b06010',
   [
     ('Inflation',   f.inflation       | fmt_num(1, '%')     if f else '—'),
     ('FX Reserves', f.reserves_months | fmt_num(1, ' months') if f else '—'),
@@ -242,7 +243,7 @@
 
 <!-- ═══ BANKING TAB ═══════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'banking', 'Banking Sector', country.score_banking, '#c62828',
+  'banking', 'Banking Sector', country.score_banking, '#b02020',
   [],
   'banking_sector'
 ) }}
@@ -250,14 +251,14 @@
 
 <!-- ═══ POLITICS TAB ══════════════════════════════════════════════════════════ -->
 {{ pillar_tab(
-  'politics', 'Political Governance', country.score_political, '#2e7d32',
+  'politics', 'Political Governance', country.score_political, '#1a6830',
   [],
   'political_governance'
 ) }}
 
 
 <!-- ═══ HISTORY TAB ═══════════════════════════════════════════════════════════ -->
-<div id="tab-history" class="tab-panel card">
+<div id="tab-history" class="tab-panel card" style="border-top:none;border-radius:0 0 2px 2px">
   {% if history %}
   <div class="table-wrap">
     <table>
@@ -270,21 +271,21 @@
       </thead>
       <tbody>
         {% for r in history %}
-        <tr {% if loop.first %}style="background:#f0f7ff"{% endif %}>
-          <td class="text-mono" style="font-size:12px;white-space:nowrap">
+        <tr {% if loop.first %}style="background:var(--blue-bg)"{% endif %}>
+          <td class="text-mono" style="font-size:0.65rem;white-space:nowrap">
             {{ r.created_at|fmt_date }}
-            {% if loop.first %}<span style="margin-left:5px;font-size:9px;background:#1565c0;color:#fff;padding:1px 5px;border-radius:3px">NOW</span>{% endif %}
+            {% if loop.first %}<span style="margin-left:5px;font-size:0.55rem;background:var(--blue);color:#fff;padding:1px 5px;border-radius:2px;letter-spacing:0.04em">NOW</span>{% endif %}
           </td>
           <td><span class="rating-badge" style="background:{{ r.rating|rating_color }}">{{ r.rating }}</span></td>
           <td>{% if r.outlook %}<span class="outlook-badge" style="{{ r.outlook|outlook_style }}">{{ r.outlook }}</span>{% else %}—{% endif %}</td>
-          <td class="text-mono" style="font-size:13px">{{ r.composite_score|fmt_num(1) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_economic|fmt_num(0) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_fiscal|fmt_num(0) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_external|fmt_num(0) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_monetary|fmt_num(0) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_banking|fmt_num(0) }}</td>
-          <td class="text-mono" style="font-size:12px;color:#546e7a">{{ r.score_political|fmt_num(0) }}</td>
-          <td style="font-size:12px;color:{% if r.source=='override' %}#e65100{% else %}#546e7a{% endif %}">{{ r.source }}</td>
+          <td class="text-mono" style="font-size:0.7rem">{{ r.composite_score|fmt_num(1) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_economic|fmt_num(0) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_fiscal|fmt_num(0) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_external|fmt_num(0) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_monetary|fmt_num(0) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_banking|fmt_num(0) }}</td>
+          <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ r.score_political|fmt_num(0) }}</td>
+          <td style="font-size:0.65rem;color:{% if r.source=='override' %}var(--amber){% else %}var(--ink3){% endif %}">{{ r.source }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -297,12 +298,12 @@
 
 
 <!-- ═══ NEWS TAB ══════════════════════════════════════════════════════════════ -->
-<div id="tab-news" class="tab-panel card">
+<div id="tab-news" class="tab-panel card" style="border-top:none;border-radius:0 0 2px 2px">
   {% if news %}
     {% for a in news %}
     <div class="news-item">
       <div class="news-headline">
-        {% if a.url %}<a href="{{ a.url }}" target="_blank" rel="noopener" style="color:#0a1929">{{ a.headline }}</a>
+        {% if a.url %}<a href="{{ a.url }}" target="_blank" rel="noopener" style="color:var(--ink)">{{ a.headline }}</a>
         {% else %}{{ a.headline }}{% endif %}
       </div>
       <div class="news-meta">
@@ -345,17 +346,17 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Memory Title <span style="color:#9e9e9e;font-weight:400">(optional)</span></label>
+      <label class="form-label">Memory Title <span style="color:var(--ink3);font-weight:400">(optional)</span></label>
       <input id="ov-title" class="form-control" placeholder="Override: {{ country.name }} — …">
     </div>
 
     <div class="form-group">
-      <label class="form-label">Rationale <span style="color:#c62828">*</span></label>
+      <label class="form-label">Rationale <span style="color:var(--red)">*</span></label>
       <textarea id="ov-rationale" class="form-control" placeholder="Explain the reasoning for this rating override…"></textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label">Tags <span style="color:#9e9e9e;font-weight:400">(comma-separated)</span></label>
+      <label class="form-label">Tags <span style="color:var(--ink3);font-weight:400">(comma-separated)</span></label>
       <input id="ov-tags" class="form-control" placeholder="e.g. sanctions, geopolitical, fiscal">
     </div>
 
@@ -369,13 +370,13 @@
              onclick="toggleCountry(this)">
           <input type="checkbox" style="flex-shrink:0;pointer-events:none">
           <span>{{ c.name }}</span>
-          <span style="font-size:11px;color:#9e9e9e;margin-left:auto">{{ c.iso2 }}</span>
+          <span style="font-size:0.6rem;color:var(--ink3);margin-left:auto;font-family:'JetBrains Mono',monospace">{{ c.iso2 }}</span>
         </div>
         {% endfor %}
       </div>
     </div>
 
-    <div class="flex gap-2 justify-between mt-4" style="padding-top:16px;border-top:1px solid #e2e8f0">
+    <div class="flex gap-2 justify-between mt-4" style="padding-top:14px;border-top:1px solid var(--border)">
       <button class="btn btn-outline" onclick="closeOverrideModal()">Cancel</button>
       <button class="btn btn-orange" id="ov-submit" onclick="submitOverride('{{ country.iso2 }}')">Save Override</button>
     </div>

@@ -1,7 +1,7 @@
 import json
 from db import get_db
 from services.worldbank import sync_country_fundamentals
-from services.openai_service import get_rating
+from services.openai_service import get_rating, research_country
 
 
 def compute_composite(scores: dict) -> float:
@@ -64,12 +64,16 @@ async def run_ai_rating(iso2: str) -> dict:
         except Exception:
             pass
 
-    # 5. Call GPT-4o
+    # 5. Web research brief (best-effort — skipped if API unavailable)
+    research_brief = await research_country(country["name"])
+
+    # 6. Call GPT-4o
     ai_result = await get_rating(
         country_name=country["name"],
         fundamentals=fundamentals,
         headlines=headlines,
         memories=applicable,
+        research_brief=research_brief,
     )
 
     rating = ai_result["rating"]

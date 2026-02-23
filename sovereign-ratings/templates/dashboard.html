@@ -8,7 +8,7 @@
     <p class="page-subtitle">Global sovereign credit ratings powered by GPT-4o + World Bank data</p>
   </div>
   <div class="flex gap-2 flex-wrap">
-    <button class="btn btn-blue" onclick="triggerJob('/api/jobs/sync-news','News Sync')">Sync News</button>
+    <button class="btn btn-ink" onclick="triggerJob('/api/jobs/sync-news','News Sync')">Sync News</button>
     <button class="btn btn-green" onclick="triggerJob('/api/jobs/sync-wb','World Bank Sync')">Sync World Bank</button>
     <button class="btn btn-purple" onclick="triggerJob('/api/jobs/rerate-all','AI Re-rate All')">Re-rate All</button>
   </div>
@@ -26,11 +26,11 @@
     <div class="stat-label">Rated</div>
   </div>
   <div class="stat-card">
-    <div class="stat-value" style="color:#2e7d32">{{ ig }}</div>
+    <div class="stat-value" style="color:var(--green)">{{ ig }}</div>
     <div class="stat-label">Investment Grade</div>
   </div>
   <div class="stat-card">
-    <div class="stat-value" style="color:#c62828">{{ below_ig }}</div>
+    <div class="stat-value" style="color:var(--red)">{{ below_ig }}</div>
     <div class="stat-label">Below IG</div>
   </div>
 </div>
@@ -73,9 +73,9 @@
           data-iso="{{ c.iso2|lower }}"
           data-region="{{ c.region or '' }}"
           data-category="{{ c.rating|rating_category }}">
-        <td style="font-weight:600">{{ c.name }}</td>
-        <td class="text-mono" style="font-size:13px">{{ c.iso2 }}</td>
-        <td style="font-size:12px;color:#546e7a">{{ c.region or '—' }}</td>
+        <td style="font-weight:600;color:var(--ink)">{{ c.name }}</td>
+        <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ c.iso2 }}</td>
+        <td style="font-size:0.68rem;color:var(--ink3)">{{ c.region or '—' }}</td>
         <td>
           {% if c.rating %}
             <span class="rating-badge" style="background:{{ c.rating|rating_color }}">{{ c.rating }}</span>
@@ -88,11 +88,11 @@
             <span class="outlook-badge" style="{{ c.outlook|outlook_style }}">{{ c.outlook }}</span>
           {% else %}—{% endif %}
         </td>
-        <td class="text-mono" style="font-size:13px;color:#546e7a">
+        <td class="text-mono" style="font-size:0.7rem;color:var(--ink3)">
           {{ c.composite_score|fmt_num(1) }}
         </td>
-        <td style="font-size:12px">{{ c.rating|rating_category }}</td>
-        <td style="font-size:12px;color:{% if c.source=='override' %}#e65100{% else %}#546e7a{% endif %}">
+        <td style="font-size:0.68rem;color:var(--ink2)">{{ c.rating|rating_category }}</td>
+        <td style="font-size:0.65rem;color:{% if c.source=='override' %}var(--amber){% else %}var(--ink3){% endif %}">
           {{ c.source or '—' }}
         </td>
       </tr>
@@ -100,7 +100,7 @@
     </tbody>
   </table>
 </div>
-<div id="row-count" class="text-muted mt-2" style="font-size:12px;text-align:right">
+<div id="row-count" class="text-muted mt-2" style="font-size:0.62rem;text-align:right;font-family:'JetBrains Mono',monospace">
   {{ countries|length }} countries
 </div>
 {% endblock %}
