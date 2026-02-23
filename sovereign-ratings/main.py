@@ -123,6 +123,8 @@ def score_label(v):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    key = os.environ.get("OPENAI_API_KEY", "")
+    print(f"[startup] OPENAI_API_KEY: {'SET (' + str(len(key)) + ' chars, starts ' + key[:6] + '...)' if key else 'NOT SET'}")
     db = get_db()  # initialises schema
     count = db.execute("SELECT COUNT(*) FROM countries").fetchone()[0]
     if count == 0:

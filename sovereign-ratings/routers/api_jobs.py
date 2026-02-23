@@ -1,8 +1,20 @@
 import asyncio
+import os
 from fastapi import APIRouter
 from jobs.scheduler import run_daily_news, run_weekly_wb_sync, run_weekly_rerate
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+
+
+@router.get("/health")
+async def health():
+    key = os.environ.get("OPENAI_API_KEY", "")
+    news_key = os.environ.get("NEWS_API_KEY", "")
+    return {
+        "OPENAI_API_KEY": f"set ({len(key)} chars, starts {key[:6]}...)" if key else "NOT SET",
+        "NEWS_API_KEY": f"set ({len(news_key)} chars)" if news_key else "NOT SET",
+        "ADMIN_PASSWORD": "set" if os.environ.get("ADMIN_PASSWORD") else "NOT SET",
+    }
 
 
 @router.post("/sync-news")
