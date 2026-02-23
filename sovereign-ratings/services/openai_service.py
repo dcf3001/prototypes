@@ -102,6 +102,11 @@ PILLAR SCORING (0 = worst, 100 = best):
 
 COMPOSITE WEIGHT: Economic 25% + Fiscal 25% + External 20% + Monetary 10% + Banking 10% + Political 10%
 
+SCORING RULES:
+- Assign pillar scores based solely on your analysis of this specific country
+- Do NOT use the same scores for different countries — each country must be scored on its own merits
+- Typical ranges: AAA countries score 75-95, BBB countries 45-65, B countries 25-45, CCC/D countries 5-25
+
 CRITICAL WRITING RULES FOR PILLAR SUMMARIES:
 - Each "summary" field MUST contain AT LEAST 450 words of continuous analytical prose
 - Write as a professional analyst report — flowing paragraphs, NO headings, NO labels, NO bullet points
@@ -112,16 +117,17 @@ CRITICAL WRITING RULES FOR PILLAR SUMMARIES:
 - Paragraphs must be separated by \\n\\n in the JSON string value
 
 Respond ONLY with valid JSON. No markdown fences, no commentary outside the JSON object.
+DO NOT copy the placeholder values below — every score must reflect your actual assessment of this specific country.
 {{
-  "rating": "BBB",
-  "outlook": "Stable",
+  "rating": "<one of the 22 rating values>",
+  "outlook": "<one of the 5 outlook values>",
   "pillar_scores": {{
-    "economic_strength": 60,
-    "fiscal_position": 55,
-    "external_position": 50,
-    "monetary_policy": 65,
-    "banking_sector": 58,
-    "political_governance": 52
+    "economic_strength": <integer 0-100 based on your analysis>,
+    "fiscal_position": <integer 0-100 based on your analysis>,
+    "external_position": <integer 0-100 based on your analysis>,
+    "monetary_policy": <integer 0-100 based on your analysis>,
+    "banking_sector": <integer 0-100 based on your analysis>,
+    "political_governance": <integer 0-100 based on your analysis>
   }},
   "rationale": "2-3 sentence overall summary explaining the assigned rating and outlook.",
   "pillar_analysis": {{
