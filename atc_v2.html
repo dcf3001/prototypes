@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sovereign Risk Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;600;700&family=Libre+Franklin:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2efe8;--bg2:#ebe7de;--bg3:#e2ddd2;
+  --surface:#faf8f4;--surface2:#f5f2eb;
+  --border:#d4cfc4;--border2:#c4bdb0;
+  --ink:#1c1a16;--ink2:#4a4640;--ink3:#8a8478;--ink4:#b0a898;
+  --gold:#b8860a;--gold-light:#e8c84a;
+  --red:#b81818;--red2:#d02020;--red-bg:#fbeaea;--red-bdr:#d89898;
+  --hi:#c05000;--hi-bg:#fff2e0;--hi-bdr:#ecc078;
+  --med:#7a6800;--med-bg:#fefce0;--med-bdr:#d8cc50;
+  --low:#556070;--low-bg:#f0f2f4;--low-bdr:#9aaab8;
+  --vlow:#145028;--vlow-bg:#e4f5ea;--vlow-bdr:#60b878;
+  --min:#1a4478;--min-bg:#eef2fb;--min-bdr:#90aad8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--ink);font-family:'Libre Franklin',sans-serif;font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ── MASTHEAD ── */
+.mast{background:var(--ink);border-bottom:3px solid var(--gold);padding:0 20px;display:flex;align-items:center;height:54px;flex-shrink:0;}
+.mast-flag{width:44px;height:44px;border-radius:3px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-right:14px;flex-shrink:0;border:1px solid rgba(255,255,255,.12);}
+.mast-country{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:#fff;letter-spacing:.01em;}
+.mast-meta{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:.2em;text-transform:uppercase;margin-top:2px;}
+.mast-score-block{margin-left:24px;padding-left:20px;border-left:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.mast-composite{display:flex;flex-direction:column;align-items:center;}
+.mc-val{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;}
+.mc-label{font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:2px;}
+.mast-rating-pill{font-family:'Libre Franklin',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:2px;border:1px solid;white-space:nowrap;}
+.mast-divider{width:1px;height:30px;background:rgba(255,255,255,.1);margin:0 4px;}
+.mast-stat{display:flex;flex-direction:column;align-items:center;}
+.ms-val{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:600;color:rgba(255,255,255,.8);}
+.ms-label{font-size:.5rem;color:rgba(255,255,255,.35);letter-spacing:.15em;text-transform:uppercase;margin-top:1px;}
+.mast-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.country-select-wrap{position:relative;}
+select#cpicker{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);font-family:'Libre Franklin',sans-serif;font-size:.72rem;font-weight:600;padding:7px 28px 7px 11px;cursor:pointer;letter-spacing:.04em;min-width:190px;border-radius:2px;}
+select#cpicker:focus{outline:none;border-color:var(--gold-light);}
+select#cpicker option{background:#1c1a16;color:#fff;}
+.sel-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.5);pointer-events:none;font-size:.65rem;}
+.live-pip{display:flex;align-items:center;gap:5px;font-size:.58rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#3fb950;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── INTEL SUMMARY BAR ── */
+.intel-bar{background:var(--ink);border-bottom:2px solid rgba(184,134,10,.5);padding:0 16px 0 0;display:flex;align-items:stretch;flex-shrink:0;min-height:0;max-height:80px;}
+.intel-radar-col{width:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.08);padding:0 9px;}
+.intel-label-col{display:flex;flex-direction:column;justify-content:center;padding:8px 14px;border-right:1px solid rgba(255,255,255,.07);flex-shrink:0;min-width:130px;}
+.intel-eyebrow{font-size:.45rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.28);font-weight:700;margin-bottom:2px;}
+.intel-country-name{font-family:'Playfair Display',serif;font-size:.88rem;color:#fff;font-weight:700;line-height:1.2;margin-bottom:4px;}
+.intel-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.intel-chip{font-size:.48rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:2px;border:1px solid;white-space:nowrap;}
+.intel-chip.sc-crit{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red2);}
+.intel-chip.sc-hi  {background:var(--hi-bg); border-color:var(--hi-bdr); color:var(--hi);}
+.intel-sep{width:1px;background:rgba(255,255,255,.07);margin:10px 0;flex-shrink:0;}
+.intel-body{flex:1;padding:9px 16px;display:flex;flex-direction:column;justify-content:center;min-width:0;overflow:hidden;}
+.intel-summary-text{font-size:.72rem;line-height:1.65;color:rgba(255,255,255,.58);max-width:100%;}
+.intel-summary-text strong{color:rgba(255,255,255,.9);font-weight:600;}
+.intel-summary-text em{color:var(--gold-light);font-style:normal;font-weight:600;}
+.intel-attr-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.iat{font-size:.52rem;font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:2px;border:1px solid;white-space:nowrap;cursor:default;}
+.iat.sc-crit{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red2);}
+.iat.sc-hi  {background:var(--hi-bg); border-color:var(--hi-bdr); color:var(--hi);}
+.intel-ts{display:flex;flex-direction:column;justify-content:center;padding:8px 0 8px 12px;flex-shrink:0;border-left:1px solid rgba(255,255,255,.07);margin-left:4px;min-width:90px;}
+.intel-ts-label{font-size:.44rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:2px;}
+.intel-ts-val{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.38);}
+/* ── BODY ── */
+.body{flex:1;display:flex;min-height:0;overflow:hidden;}
+
+
+/* LEFT SIDEBAR */
+.sidebar-left{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.sl-section{border-bottom:1px solid var(--border);padding:10px 13px;}
+.sl-section-hdr{font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-bottom:7px;}
+.cat-summary-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;margin:0 -13px;padding-left:13px;padding-right:13px;}
+.cat-summary-row:last-child{border-bottom:none;}
+.cat-summary-row:hover{background:var(--bg);}
+.csr-name{font-size:.68rem;font-weight:600;color:var(--ink2);}
+.csr-badge{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;width:36px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px;border:1px solid;flex-shrink:0;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.ig-cell{background:var(--bg);border:1px solid var(--border);padding:6px 8px;}
+.ig-label{font-size:.5rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink4);font-weight:600;}
+.ig-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;color:var(--ink);margin-top:2px;}
+.peer-row{display:flex;align-items:center;gap:5px;padding:3px 0;}
+.pr-rank{font-size:.58rem;color:var(--ink4);width:18px;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+.pr-name{font-size:.63rem;color:var(--ink2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-name.me{font-weight:700;color:var(--min);}
+.pr-score{font-family:'JetBrains Mono',monospace;font-size:.63rem;font-weight:700;flex-shrink:0;width:26px;text-align:right;}
+
+/* CENTRE AREA */
+.attrs-area{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;background:var(--surface);}
+.attrs-toolbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:0 14px;height:38px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.at-label{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);font-weight:700;flex-shrink:0;}
+.filter-pills{display:flex;gap:3px;}
+.fp{font-size:.6rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;border-radius:2px;transition:all .1s;white-space:nowrap;}
+.fp:hover{border-color:var(--border2);color:var(--ink);}
+.fp.f-all.on{background:var(--min-bg);border-color:var(--min-bdr);color:var(--min);}
+.fp.f-crit.on{background:var(--red-bg); border-color:var(--red-bdr); color:var(--red2);}
+.fp.f-hi.on  {background:var(--hi-bg);  border-color:var(--hi-bdr);  color:var(--hi);}
+.fp.f-med.on {background:var(--med-bg); border-color:var(--med-bdr); color:var(--med);}
+.fp.f-low.on {background:var(--low-bg); border-color:var(--low-bdr); color:var(--low);}
+.fp.f-vlow.on{background:var(--vlow-bg);border-color:var(--vlow-bdr);color:var(--vlow);}
+.at-sort{margin-left:auto;display:flex;align-items:center;gap:6px;}
+select.sort-sel{appearance:none;-webkit-appearance:none;background:var(--bg);border:1px solid var(--border);color:var(--ink2);font-family:'Libre Franklin',sans-serif;font-size:.62rem;padding:4px 22px 4px 8px;cursor:pointer;border-radius:2px;}
+select.sort-sel:focus{outline:none;}
+
+/* FM COLUMNS GRID */
+.attrs-columns{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:0;overflow-y:auto;align-content:start;}
+.attr-panel{border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;}
+.attr-panel:nth-child(4n){border-right:none;}
+.ap-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:7px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ap-title{font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);}
+.ap-avg{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;padding:2px 7px;border-radius:2px;border:1px solid;}
+
+/* FM ATTRIBUTE ROW — the heart of it */
+.attr-row{display:flex;align-items:center;padding:0 10px 0 12px;height:26px;border-bottom:1px solid rgba(212,207,196,.35);transition:background .08s;}
+.attr-row:last-child{border-bottom:none;}
+.attr-row:hover{background:var(--bg);}
+.attr-row.highlighted{background:rgba(184,134,10,.055);}
+.ar-name{flex:1;font-size:.68rem;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.ar-raw{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--ink4);margin-right:8px;flex-shrink:0;white-space:nowrap;}
+.ar-score{font-family:'JetBrains Mono',monospace;font-size:.86rem;font-weight:700;width:28px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0;border:1px solid transparent;}
+.sc-crit{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red2);}
+.sc-hi  {background:var(--hi-bg); border-color:var(--hi-bdr); color:var(--hi);}
+.sc-med {background:var(--med-bg);border-color:var(--med-bdr);color:var(--med);}
+.sc-low {background:var(--low-bg);border-color:var(--low-bdr);color:var(--low);}
+.sc-vlow{background:var(--vlow-bg);border-color:var(--vlow-bdr);color:var(--vlow);}
+
+/* RIGHT SIDEBAR */
+.sidebar-right{width:200px;flex-shrink:0;background:var(--ink);border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;overflow-y:auto;}
+.sr-card-top{padding:14px 13px 11px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center;}
+.sr-country-name{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;font-weight:700;line-height:1.2;margin-bottom:4px;}
+.sr-rating-label{font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+.sr-score-ring{width:68px;height:68px;border-radius:50%;border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:8px auto;}
+.sr-ring-val{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;line-height:1;}
+.sr-ring-label{font-size:.45rem;letter-spacing:.15em;text-transform:uppercase;margin-top:2px;opacity:.5;}
+.sr-rating-big{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;line-height:1;}
+.wl-badge{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:2px;border:1px solid;display:inline-block;margin-top:6px;}
+.sr-section{padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.07);}
+.sr-section-hdr{font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.3);font-weight:700;margin-bottom:6px;}
+.sr-stat-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
+.sr-stat-label{font-size:.62rem;color:rgba(255,255,255,.42);}
+.sr-stat-val{font-family:'JetBrains Mono',monospace;font-size:.66rem;font-weight:600;color:rgba(255,255,255,.82);}
+.mini-bar-row{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+.mbr-label{font-size:.56rem;color:rgba(255,255,255,.38);width:62px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mbr-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.mbr-fill{height:100%;border-radius:2px;}
+.mbr-score{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;width:20px;text-align:right;flex-shrink:0;}
+
+/* ── LOADING OVERLAY ── */
+.data-overlay{position:fixed;inset:0;background:rgba(28,26,22,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px;}
+.do-spinner{width:44px;height:44px;border:3px solid rgba(184,134,10,.25);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.do-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#fff;}
+.do-sub{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.do-progress{width:260px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.do-bar{height:100%;background:var(--gold);border-radius:2px;transition:width .3s;}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div class="mast-flag" id="mast-flag">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.85">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="13" cy="13" r="11" stroke="#b8860a" stroke-width="1"   opacity=".45"/>
+      <circle cx="13" cy="13" r="7"  stroke="#b8860a" stroke-width="1"   opacity=".3"/>
+      <circle cx="13" cy="13" r="3"  stroke="#b8860a" stroke-width="1"   opacity=".55"/>
+      <line x1="13" y1="2"  x2="13" y2="24" stroke="#b8860a" stroke-width=".6" opacity=".25"/>
+      <line x1="2"  y1="13" x2="24" y2="13" stroke="#b8860a" stroke-width=".6" opacity=".25"/>
+      <line x1="13" y1="13" x2="13" y2="2" stroke="#e8c84a" stroke-width="1.5" stroke-linecap="round"
+            style="transform-origin:13px 13px;animation:sweep 4s linear infinite;"/>
+      <circle cx="13" cy="13" r="1.5" fill="#e8c84a"/>
+    </svg>
+    </svg>
+  </div>
+  <div>
+    <div class="mast-country" id="mast-country">—</div>
+    <div class="mast-meta">Sovereign Risk Monitor · 80 Indicators · IMF WEO 2024 Data</div>
+  </div>
+  <div class="mast-score-block">
+    <div class="mast-composite">
+      <div class="mc-val" id="mc-val">—</div>
+      <div class="mc-label">Risk Score</div>
+    </div>
+    <div class="mast-divider"></div>
+    <span class="mast-rating-pill" id="mast-pill">—</span>
+    <div class="mast-divider"></div>
+    <div class="mast-stat"><div class="ms-val" id="ms-rating">—</div><div class="ms-label">S&P Rating</div></div>
+    <div class="mast-divider"></div>
+    <div class="mast-stat"><div class="ms-val" id="ms-cds">—</div><div class="ms-label">CDS bps</div></div>
+    <div class="mast-divider"></div>
+    <div class="mast-stat"><div class="ms-val" id="ms-exp">—</div><div class="ms-label">Total Exp $mm</div></div>
+    <div class="mast-divider"></div>
+    <div class="mast-stat"><div class="ms-val" id="ms-watchlist">—</div><div class="ms-label">Watchlist</div></div>
+  </div>
+  <div class="mast-right">
+    <div class="country-select-wrap">
+      <select id="cpicker" onchange="selectCountry(this.value)"></select>
+      <span class="sel-arrow">▾</span>
+    </div>
+    <div class="live-pip" id="data-pip"><div class="live-dot" style="background:#3fb950"></div>IMF WEO 2024 + World Bank</div>
+  </div>
+</div>
+
+<!-- ══ INTEL SUMMARY BAR ══ -->
+<div class="intel-bar" id="intel-bar">
+  <div class="intel-radar-col">
+    <svg width="46" height="46" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="23" cy="23" r="20" stroke="#b8860a" stroke-width="1"   opacity=".35"/>
+      <circle cx="23" cy="23" r="13" stroke="#b8860a" stroke-width="1"   opacity=".25"/>
+      <circle cx="23" cy="23" r="6"  stroke="#b8860a" stroke-width="1"   opacity=".4"/>
+      <line x1="23" y1="3"  x2="23" y2="43" stroke="#b8860a" stroke-width=".6" opacity=".2"/>
+      <line x1="3"  y1="23" x2="43" y2="23" stroke="#b8860a" stroke-width=".6" opacity=".2"/>
+      <!-- sweep wedge gradient -->
+      <path d="M23 23 L23 3 A20 20 0 0 1 38.1 11.9 Z" fill="url(#sweepGrad)"
+            style="transform-origin:23px 23px;animation:sweep 4s linear infinite;"/>
+      <line x1="23" y1="23" x2="23" y2="3" stroke="#e8c84a" stroke-width="1.5" stroke-linecap="round"
+            style="transform-origin:23px 23px;animation:sweep 4s linear infinite;"/>
+      <circle cx="23" cy="23" r="2" fill="#e8c84a"/>
+      <defs>
+        <radialGradient id="sweepGrad" cx="0%" cy="0%" r="100%">
+          <stop offset="0%"   stop-color="#b8860a" stop-opacity=".25"/>
+          <stop offset="100%" stop-color="#b8860a" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="intel-label-col">
+    <div class="intel-eyebrow">Risk Intelligence</div>
+    <div class="intel-country-name" id="intel-country-name">—</div>
+    <div class="intel-chips" id="intel-chips"></div>
+  </div>
+
+  <div class="intel-sep"></div>
+
+  <div class="intel-body">
+    <div class="intel-summary-text" id="intel-summary-text">Select a country to view the AI-generated vulnerability assessment.</div>
+    <div class="intel-attr-tags" id="intel-attr-tags"></div>
+  </div>
+
+  <div class="intel-ts" id="intel-ts"></div>
+</div>
+
+<div class="body">
+
+  <div class="sidebar-left">
+    <div class="sl-section">
+      <div class="sl-section-hdr">Pillar Scores</div>
+      <div id="cat-summary-list"></div>
+    </div>
+    <div class="sl-section">
+      <div class="sl-section-hdr">Key Metrics</div>
+      <div class="info-grid" id="info-grid"></div>
+    </div>
+    <div class="sl-section" style="flex:1">
+      <div class="sl-section-hdr">Peer Ranking</div>
+      <div id="peer-list"></div>
+    </div>
+  </div>
+
+  <div class="attrs-area">
+    <div class="attrs-toolbar">
+      <span class="at-label">Filter</span>
+      <div class="filter-pills">
+        <div class="fp f-all on" onclick="setFilter('all',this)">All 80</div>
+        <div class="fp f-crit" onclick="setFilter('crit',this)">Critical 19–20</div>
+        <div class="fp f-hi"   onclick="setFilter('hi',this)">High 15–18</div>
+        <div class="fp f-med"  onclick="setFilter('med',this)">Moderate 10–14</div>
+        <div class="fp f-low"  onclick="setFilter('low',this)">Low 5–9</div>
+        <div class="fp f-vlow" onclick="setFilter('vlow',this)">Very Low 1–4</div>
+      </div>
+      <div class="at-sort">
+        <span class="at-label">Sort</span>
+        <select class="sort-sel" id="sort-sel" onchange="renderColumns()">
+          <option value="default">Default</option>
+          <option value="desc">Highest risk first</option>
+          <option value="asc">Lowest risk first</option>
+          <option value="alpha">A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="attrs-columns" id="attrs-columns"></div>
+  </div>
+
+  <div class="sidebar-right">
+    <div class="sr-card-top">
+      <div class="sr-country-name" id="sr-name">—</div>
+      <div class="sr-rating-label">OVERALL RISK SCORE</div>
+      <div class="sr-score-ring" id="sr-ring">
+        <div class="sr-ring-val" id="sr-ring-val">—</div>
+        <div class="sr-ring-label">/ 20</div>
+      </div>
+      <div class="sr-rating-big" id="sr-rating-big">—</div>
+      <div class="sr-rating-label">S&P EQUIVALENT</div>
+      <div id="sr-wl-badge"></div>
+    </div>
+    <div class="sr-section">
+      <div class="sr-section-hdr">Pillar Avg Scores</div>
+      <div id="sr-cat-bars"></div>
+    </div>
+    <div class="sr-section">
+      <div class="sr-section-hdr">Exposure Breakdown</div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Total Gross</span><span class="sr-stat-val" id="sr-totexp">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Lending</span><span class="sr-stat-val" id="sr-lend">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Trading</span><span class="sr-stat-val" id="sr-trad">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Derivatives</span><span class="sr-stat-val" id="sr-deriv">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">SFT</span><span class="sr-stat-val" id="sr-sft">—</span></div>
+    </div>
+    <div class="sr-section">
+      <div class="sr-section-hdr">Stress Breakdown</div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Total Stress</span><span class="sr-stat-val" id="sr-strtot">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">FX Stress</span><span class="sr-stat-val" id="sr-strfx">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Rates Stress</span><span class="sr-stat-val" id="sr-strrates">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Equity Stress</span><span class="sr-stat-val" id="sr-streq">—</span></div>
+      <div class="sr-stat-row"><span class="sr-stat-label">Credit Stress</span><span class="sr-stat-val" id="sr-strcr">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  RNG
+// ══════════════════════════════════════════════════════
+function makeRng(seed){
+  let s=seed>>>0;
+  return ()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/4294967296;};
+}
+function gauss(rng,mean,std){
+  let u=0,v=0;
+  while(!u)u=rng();while(!v)v=rng();
+  return mean+std*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const r1=(v)=>Math.round(v*10)/10;
+const r2=(v)=>Math.round(v*100)/100;
+
+// ══════════════════════════════════════════════════════
+//  REFERENCE DATA
+// ══════════════════════════════════════════════════════
+const COUNTRIES=["United States","China","Germany","Japan","India","United Kingdom","France","Italy","Brazil","Canada","Russia","South Korea","Australia","Spain","Mexico","Indonesia","Netherlands","Saudi Arabia","Turkey","Switzerland","Poland","Sweden","Belgium","Argentina","Norway","Israel","Austria","United Arab Emirates","Thailand","Nigeria","Singapore","Malaysia","South Africa","Denmark","Philippines","Bangladesh","Egypt","Vietnam","Iran","Pakistan","Colombia","Romania","Czech Republic","Chile","Finland","Iraq","Portugal","Peru","New Zealand","Greece","Kazakhstan","Hungary","Algeria","Qatar","Ethiopia","Slovakia","Kuwait","Ukraine","Kenya","Morocco","Ecuador","Dominican Republic","Ghana","Tanzania","Guatemala","Oman","Luxembourg","Myanmar","Costa Rica","Panama","Bulgaria","Serbia","Croatia","Libya","Belarus","Uzbekistan","Sri Lanka","Uruguay","Azerbaijan","Bolivia","Cameroon","Ivory Coast","Jordan","Lithuania","Uganda","Paraguay","Sudan","Latvia","Tunisia","Bahrain","El Salvador","Honduras","Cyprus","Zambia","Senegal","Slovenia","Zimbabwe","Nepal","Cambodia","Bosnia"];
+const BASE_GDPS=[25462,17963,4430,4213,3737,3079,2923,2170,2126,2140,1862,1709,1693,1582,1322,1319,1092,1062,907,869,748,585,582,572,546,509,471,421,495,477,424,374,349,343,361,432,358,449,367,341,314,301,296,301,291,264,261,253,247,218,224,197,239,235,151,127,163,160,143,138,118,115,76,79,89,104,88,66,65,76,91,68,71,44,73,93,46,62,49,43,51,48,51,75,49,41,51,40,30,44,33,36,30,28,28,60,24,40,29,25];
+const POPS=[335,1412,84,125,1393,68,68,59,215,38,144,52,26,47,128,274,18,36,85,8.7,38,10.5,11.6,46,5.4,9.5,9.1,9.9,72,218,5.9,33,60,5.9,113,170,104,98,85,232,52,19,10.9,19.5,5.6,42,10.3,33,5.1,10.7,19,10,45,2.9,123,5.5,4.2,44,56,38,18.5,11.2,33,63,62,14.7,0.65,55,5.2,4.4,6.5,8.8,4.2,7.1,9.4,35,22,3.5,10.3,11,29,27,10.3,2.9,47,7.2,47,1.8,12,1.8,6.5,10,1.2,19,17,2.1,15,30,17,3.7];
+const RATINGS=["AAA","AA+","AA","AA-","A+","A","A-","BBB+","BBB","BBB-","BB+","BB","BB-","B+","B","B-","CCC+","CCC","CCC-","D"];
+const FLAGS={
+  "United States":"🇺🇸","China":"🇨🇳","Germany":"🇩🇪","Japan":"🇯🇵","India":"🇮🇳","United Kingdom":"🇬🇧","France":"🇫🇷","Italy":"🇮🇹","Brazil":"🇧🇷","Canada":"🇨🇦","Russia":"🇷🇺","South Korea":"🇰🇷","Australia":"🇦🇺","Spain":"🇪🇸","Mexico":"🇲🇽","Indonesia":"🇮🇩","Netherlands":"🇳🇱","Saudi Arabia":"🇸🇦","Turkey":"🇹🇷","Switzerland":"🇨🇭","Poland":"🇵🇱","Sweden":"🇸🇪","Belgium":"🇧🇪","Argentina":"🇦🇷","Norway":"🇳🇴","Israel":"🇮🇱","Austria":"🇦🇹","United Arab Emirates":"🇦🇪","Thailand":"🇹🇭","Nigeria":"🇳🇬","Singapore":"🇸🇬","Malaysia":"🇲🇾","South Africa":"🇿🇦","Denmark":"🇩🇰","Philippines":"🇵🇭","Bangladesh":"🇧🇩","Egypt":"🇪🇬","Vietnam":"🇻🇳","Iran":"🇮🇷","Pakistan":"🇵🇰","Colombia":"🇨🇴","Romania":"🇷🇴","Czech Republic":"🇨🇿","Chile":"🇨🇱","Finland":"🇫🇮","Iraq":"🇮🇶","Portugal":"🇵🇹","Peru":"🇵🇪","New Zealand":"🇳🇿","Greece":"🇬🇷","Kazakhstan":"🇰🇿","Hungary":"🇭🇺","Algeria":"🇩🇿","Qatar":"🇶🇦","Ethiopia":"🇪🇹","Slovakia":"🇸🇰","Kuwait":"🇰🇼","Ukraine":"🇺🇦","Kenya":"🇰🇪","Morocco":"🇲🇦","Ecuador":"🇪🇨","Dominican Republic":"🇩🇴","Ghana":"🇬🇭","Tanzania":"🇹🇿","Guatemala":"🇬🇹","Oman":"🇴🇲","Luxembourg":"🇱🇺","Myanmar":"🇲🇲","Costa Rica":"🇨🇷","Panama":"🇵🇦","Bulgaria":"🇧🇬","Serbia":"🇷🇸","Croatia":"🇭🇷","Libya":"🇱🇾","Belarus":"🇧🇾","Uzbekistan":"🇺🇿","Sri Lanka":"🇱🇰","Uruguay":"🇺🇾","Azerbaijan":"🇦🇿","Bolivia":"🇧🇴","Cameroon":"🇨🇲","Ivory Coast":"🇨🇮","Jordan":"🇯🇴","Lithuania":"🇱🇹","Uganda":"🇺🇬","Paraguay":"🇵🇾","Sudan":"🇸🇩","Latvia":"🇱🇻","Tunisia":"🇹🇳","Bahrain":"🇧🇭","El Salvador":"🇸🇻","Honduras":"🇭🇳","Cyprus":"🇨🇾","Zambia":"🇿🇲","Senegal":"🇸🇳","Slovenia":"🇸🇮","Zimbabwe":"🇿🇼","Nepal":"🇳🇵","Cambodia":"🇰🇭","Bosnia":"🇧🇦"
+};
+
+// ══════════════════════════════════════════════════════
+//  DATASET BUILDER — 80 fields
+// ══════════════════════════════════════════════════════
+// ── REAL S&P SOVEREIGN RATINGS (source: S&P via countryeconomy.com, Feb 2026) ──
+// NR countries assigned proxy ratings based on risk profile
+const REAL_RATINGS={
+  "United States":"AA+","China":"A+","Germany":"AAA","Japan":"A+","India":"BBB",
+  "United Kingdom":"AA","France":"A+","Italy":"BBB+","Brazil":"BB","Canada":"AAA",
+  "Russia":"CC","South Korea":"AA","Australia":"AAA","Spain":"A+","Mexico":"BBB",
+  "Indonesia":"BBB","Netherlands":"AAA","Saudi Arabia":"A+","Turkey":"BB-","Switzerland":"AAA",
+  "Poland":"A-","Sweden":"AAA","Belgium":"AA","Argentina":"CCC+","Norway":"AAA",
+  "Israel":"A","Austria":"AA+","United Arab Emirates":"AA","Thailand":"BBB+","Nigeria":"B-",
+  "Singapore":"AAA","Malaysia":"A-","South Africa":"BB","Denmark":"AAA","Philippines":"BBB+",
+  "Bangladesh":"B+","Egypt":"B","Vietnam":"BB+","Iran":"CCC","Pakistan":"B-",
+  "Colombia":"BB","Romania":"BBB-","Czech Republic":"AA-","Chile":"A","Finland":"AA+",
+  "Iraq":"B-","Portugal":"A+","Peru":"BBB-","New Zealand":"AA+","Greece":"BBB",
+  "Kazakhstan":"BBB-","Hungary":"BBB-","Algeria":"BB-","Qatar":"AA","Ethiopia":"SD",
+  "Slovakia":"A+","Kuwait":"AA-","Ukraine":"CCC+","Kenya":"B","Morocco":"BB+",
+  "Ecuador":"B-","Dominican Republic":"BB","Ghana":"B-","Tanzania":"B+","Guatemala":"BB+",
+  "Oman":"BBB-","Luxembourg":"AAA","Myanmar":"B-","Costa Rica":"BB","Panama":"BBB-",
+  "Bulgaria":"BBB+","Serbia":"BBB-","Croatia":"A-","Libya":"B-","Belarus":"CC",
+  "Uzbekistan":"BB","Sri Lanka":"CCC+","Uruguay":"BBB+","Azerbaijan":"BB+","Bolivia":"CCC-",
+  "Cameroon":"B-","Ivory Coast":"BB-","Jordan":"BB-","Lithuania":"A","Uganda":"B-",
+  "Paraguay":"BBB-","Sudan":"CCC-","Latvia":"A","Tunisia":"CCC+","Bahrain":"B",
+  "El Salvador":"B-","Honduras":"BB-","Cyprus":"A-","Zambia":"CCC+","Senegal":"CCC+",
+  "Slovenia":"AA","Zimbabwe":"CCC-","Nepal":"B-","Cambodia":"B","Bosnia":"B+"
+};
+
+function buildDataset(){
+  const rng=makeRng(42);
+  return COUNTRIES.map((name,i)=>{
+
+    // ─── PILLAR 1: MACROECONOMIC (10) ───
+    const gdp=BASE_GDPS[i]*(1+(rng()-0.5)*0.1);
+    const pop=POPS[i]||10;
+    const gdpPerCap=gdp*1e9/(pop*1e6);
+    const em=1+Math.max(0,(i-20)/100);
+    const inflation=cl(gauss(rng,4.5*em,2.5),0.5,45);
+    const gdpGrowth=cl(gauss(rng,2.5+Math.max(0,(i-15)/200)*10,1.8),-8,18);
+    const unemployment=cl(gauss(rng,7+i/30,3),2,35);
+    const currentAccount=cl(gauss(rng,0,4),-15,20);
+    const fiscalBalance=cl(gauss(rng,-3.5,2.5),-18,8);
+    const publicDebt=cl(gauss(rng,65-i*0.1,25),15,180);
+    // NEW: trade balance (goods, USD bn) — negative = deficit
+    const tradeBalance=cl(gauss(rng,gdp*0.005*(rng()-0.6),gdp*0.04),-gdp*0.15,gdp*0.12);
+    // NEW: GDP trend (3yr CAGR direction; positive = improving)
+    const gdpTrend=cl(gauss(rng,gdpGrowth*0.3,0.8),-4,5);
+
+    // ─── PILLAR 2: EXTERNAL POSITION (10) ───
+    const fxReserves=cl(gauss(rng,5,2.5),0.5,20);
+    const stDebt=cl(gauss(rng,30+i*0.15,12),5,80);
+    const cds=cl(30+Math.pow(i,1.3)*(0.7+rng()*0.6),20,3000);
+    const rating=REAL_RATINGS[name]||'B';
+    const exports=cl(gauss(rng,35,15),10,90);
+    const fdi=cl(gauss(rng,3.5,2.5),-1,12);
+    // NEW: total external debt / GDP
+    const extDebtGdp=cl(gauss(rng,55+i*0.3,25),8,200);
+    // NEW: import cover (months, same as fxReserves but separately tracked)
+    const importCover=cl(gauss(rng,4.5,2.2),0.3,18);
+    // NEW: remittances / GDP
+    const remittances=cl(gauss(rng,2+i*0.04,2),0,18);
+    // NEW: 10Y sovereign bond spread vs US Treasury (bps)
+    const bondSpread=cl(30+Math.pow(i,1.25)*(0.5+rng()*0.5),10,2500);
+
+    // ─── PILLAR 3: GOVERNANCE (10) ───
+    const polStab=cl(gauss(rng,1.5-i*0.025,0.8),-3,3);
+    const ruleOfLaw=cl(gauss(rng,1.2-i*0.022,0.7),-3,3);
+    const corruption=cl(gauss(rng,72-i*0.5,12),10,95);
+    const eodb=cl(gauss(rng,78-i*0.35,10),20,95);
+    // NEW: press freedom index (higher = freer = lower risk, 0-100)
+    const pressFreedom=cl(gauss(rng,70-i*0.45,14),5,95);
+    // NEW: voice & accountability (-3 to +3)
+    const voiceAcct=cl(gauss(rng,1.1-i*0.022,0.75),-3,3);
+    // NEW: govt effectiveness (-3 to +3)
+    const govtEffect=cl(gauss(rng,1.3-i*0.024,0.7),-3,3);
+    // NEW: regulatory quality (-3 to +3)
+    const regQuality=cl(gauss(rng,1.2-i*0.021,0.65),-3,3);
+    // NEW: fragile states index (lower = more stable, 0-120)
+    const fragileIdx=cl(gauss(rng,20+i*0.55,15),2,118);
+    // NEW: control of corruption (-3 to +3)
+    const ctrlCorrupt=cl(gauss(rng,1.2-i*0.023,0.7),-3,3);
+
+    // ─── PILLAR 4: SOCIAL & STRUCTURAL (10) ───
+    const internet=cl(gauss(rng,88-i*0.5,10),15,98);
+    const urban=cl(gauss(rng,78-i*0.25,12),20,100);
+    const popGrowth=cl(gauss(rng,0.3+i*0.02,0.8),-0.5,4);
+    const literacy=cl(gauss(rng,97-i*0.4,6),40,100);
+    const hdi=cl(gauss(rng,0.92-i*0.004,0.05),0.40,0.99);
+    // NEW: youth unemployment (%)
+    const youthUnemploy=cl(gauss(rng,18+i*0.25,8),5,60);
+    // NEW: Gini coefficient (0–100; higher = more unequal = more risk)
+    const gini=cl(gauss(rng,30+i*0.12,8),20,65);
+    // NEW: life expectancy (years)
+    const lifeExpect=cl(gauss(rng,78-i*0.18,5),48,85);
+    // NEW: carbon intensity (CO2 tonnes per $m GDP; higher = more risk)
+    const carbonIntensity=cl(gauss(rng,200+i*2,80),40,800);
+    // NEW: gender inequality index (0–1; lower = more equal = lower risk)
+    const genderIneq=cl(gauss(rng,0.15+i*0.003,0.08),0.02,0.75);
+
+    // ─── PILLAR 5: RISK FLAGS (10) ───
+    const comOpts=["High","Medium","Low","Minimal"];
+    const comExpose=comOpts[rng()<0.3+i*0.004?(rng()<0.5?0:1):(rng()<0.5?2:3)];
+    const crisisHist=rng()<Math.min(0.7,0.05+i*0.007);
+    // NEW: IMF programme (Active=2, Precautionary=1, None=0)
+    const imfProg=rng()<Math.min(0.5,i*0.005)?2:(rng()<0.15?1:0);
+    // NEW: sanctions exposure (High/Medium/Low/None)
+    const sancOpts=["High","Medium","Low","None"];
+    const sancExp=sancOpts[rng()<0.05+i*0.002?0:rng()<0.1?1:rng()<0.2?2:3];
+    // NEW: transfer & convertibility risk (1–5; 5=highest)
+    const tcRisk=cl(Math.round(1+i*0.04+gauss(rng,0,0.5)),1,5);
+    // NEW: political risk rating (0–100; higher = more risk)
+    const politicalRisk=cl(gauss(rng,25+i*0.45,15),2,95);
+    // NEW: conflict proximity score (0–10; 10=active conflict)
+    const conflictProx=cl(Math.round(gauss(rng,1+i*0.07,2)),0,10);
+    // NEW: election risk (near-term election + populism flag; 0–5)
+    const electionRisk=cl(Math.round(rng()*5),0,5);
+    // NEW: social unrest index (0–10; 10=severe)
+    const socialUnrest=cl(r1(gauss(rng,1.5+i*0.06,1.8)),0,10);
+    // NEW: sovereign default history (number of defaults in past 50yrs)
+    const defaultHist=Math.round(cl(Math.pow(rng(),3)*6*(0.3+i/100),0,6));
+
+    // ─── PILLAR 6: BANK EXPOSURE (10) ───
+    let scale;
+    if(i<5)scale=8000+rng()*17000;
+    else if(i<15)scale=2000+rng()*8000;
+    else if(i<30)scale=500+rng()*2500;
+    else if(i<50)scale=100+rng()*900;
+    else if(i<70)scale=20+rng()*280;
+    else scale=rng()*100;
+    if(i>60&&rng()<0.3)scale=rng()*20;
+    const ra=cl(gauss(rng,3+i*0.06,1.2),1,10)/10;
+    // All 6 exposure types, shares sum to 1
+    const lendSh=Math.max(0.05,0.42-ra*0.22);
+    const tradSh=Math.max(0.04,0.22+ra*0.04);
+    const cashSh=Math.max(0.02,0.10-ra*0.03);
+    const derivSh=Math.max(0.02,0.14-ra*0.06);
+    const sftSh=Math.max(0.02,0.08+ra*0.18);
+    const otherSh=Math.max(0.01,1-lendSh-tradSh-cashSh-derivSh-sftSh);
+    const lending=Math.max(0,Math.round(scale*lendSh*(0.8+rng()*0.4)));
+    const trading=Math.max(0,Math.round(scale*tradSh*(0.8+rng()*0.4)));
+    const cashPlacings=Math.max(0,Math.round(scale*cashSh*(0.8+rng()*0.4)));
+    const derivatives=Math.max(0,Math.round(scale*derivSh*(0.8+rng()*0.4)));
+    const sft=Math.max(0,Math.round(scale*sftSh*(0.8+rng()*0.4)));
+    const otherExp=Math.max(0,Math.round(scale*otherSh*(0.8+rng()*0.4)));
+    const totalExp=lending+trading+cashPlacings+derivatives+sft+otherExp;
+    const lmult=ra<0.5?1.05+rng()*0.55:1.02+rng()*0.23;
+    const expLimit=Math.round(totalExp*(rng()<0.08?0.95+rng()*0.07:lmult)/100)*100;
+    const expUtil=totalExp/Math.max(1,expLimit);
+    const headroom=expLimit-totalExp;
+    const collateral=Math.max(0,Math.round(sft*(0.85+rng()*0.13)+derivatives*(0.3+rng()*0.55)));
+    const netExp=Math.max(0,totalExp-collateral);
+
+    // ─── PILLAR 7: STRESS & CAPITAL (10) ───
+    const cdsFactor=Math.min(cds/10000,0.30);
+    const riskMult=0.5+ra;
+    // Four stress components (FX, Rates, Equity, Credit) that sum to stressTotal
+    const stressFX=Math.max(0,Math.round((trading+cashPlacings)*(0.06+rng()*0.14)*riskMult));
+    const stressRates=Math.max(0,Math.round((trading+lending*0.3)*(0.03+rng()*0.10)*riskMult));
+    const stressEquity=Math.max(0,Math.round(trading*(0.07+rng()*0.18)*riskMult));
+    const stressCredit=Math.max(0,Math.round((lending*cdsFactor*(0.4+rng()*0.3)+derivatives*cdsFactor*(0.5+rng()*0.4)+sft*cdsFactor*(0.1+rng()*0.15))*riskMult));
+    const stressTotal=stressFX+stressRates+stressEquity+stressCredit;
+    const stressLimit=Math.max(1,Math.round(stressTotal*(ra<0.5?1.05+rng()*0.45:1.02+rng()*0.18)/10)*10);
+    const stressUtil=stressTotal/stressLimit;
+    // RWA
+    const rwaCredit=Math.max(0,Math.round(lending*1.0+derivatives*0.5+sft*0.2+cashPlacings*0.2));
+    const rwaMarket=Math.max(0,Math.round((stressFX+stressRates+stressEquity)*12.5));
+    const rwaTotal=rwaCredit+rwaMarket;
+    // Expected loss
+    const pd=Math.min(0.25,cds/10000*0.6);
+    const lgd=r2(0.35+rng()*0.30);
+    const expectedLoss=Math.max(0,Math.round(totalExp*pd*lgd));
+    // Tier1 ratio (exposure / assumed $50bn Tier1)
+    const TIER1=50000;
+    const t1Ratio=r2(stressTotal/TIER1);
+
+    // ─── PILLAR 8: MARKET SIGNALS (10) ───
+    const compositeRisk=cl(gauss(rng,3+i*0.06,1.2),1,10);
+    const cdsZ=cl(gauss(rng,compositeRisk*0.15-0.5,0.8),-3,4);
+    const fxYtd=cl(gauss(rng,-(compositeRisk*0.8-2),6),-30,15);
+    const watchlist=compositeRisk>=7||cds>500||crisisHist?"YES":(compositeRisk>=5?"MONITOR":"NO");
+    // NEW: local equity market YTD return (%)
+    const equityYtd=cl(gauss(rng,5-compositeRisk*1.2,14),-40,40);
+    // NEW: FX 30d realised volatility (%)
+    const fxVol=cl(gauss(rng,3+compositeRisk*0.8,2),0.5,20);
+    // NEW: 10Y government bond yield (%)
+    const bondYield=cl(gauss(rng,2+i*0.08,2),0.1,22);
+    // NEW: news sentiment score (-5 to +5; -5 very negative)
+    const newsSentiment=cl(r1(gauss(rng,2-compositeRisk*0.4,1.3)),-5,5);
+    // NEW: rating outlook (Positive=−1, Stable=0, Negative=1, Watch Neg=2)
+    const ratingOutlook=cl(Math.round(gauss(rng,i*0.015,0.8)),-1,2);
+    // NEW: CDS 1Y change (bps; positive = worsening)
+    const cds1yChg=Math.round(gauss(rng,compositeRisk*3-8,cds*0.14));
+    // NEW: implied default probability 5Y (%)
+    const impliedPD=cl(r1(cds/10000*0.6*100),0.1,25);
+
+    return{
+      name,i,pop,
+      // P1
+      gdp:r1(gdp),gdpPerCap:Math.round(gdpPerCap),gdpGrowth:r1(gdpGrowth),
+      inflation:r1(inflation),unemployment:r1(unemployment),
+      currentAccount:r1(currentAccount),fiscalBalance:r1(fiscalBalance),
+      publicDebt:r1(publicDebt),tradeBalance:r1(tradeBalance),gdpTrend:r1(gdpTrend),
+      // P2
+      fxReserves:r1(fxReserves),stDebt:r1(stDebt),cds:Math.round(cds),rating,
+      exports:r1(exports),fdi:r1(fdi),
+      extDebtGdp:r1(extDebtGdp),importCover:r1(importCover),
+      remittances:r1(remittances),bondSpread:Math.round(bondSpread),
+      // P3
+      polStab:r2(polStab),ruleOfLaw:r2(ruleOfLaw),corruption:Math.round(corruption),eodb:r1(eodb),
+      pressFreedom:r1(pressFreedom),voiceAcct:r2(voiceAcct),govtEffect:r2(govtEffect),
+      regQuality:r2(regQuality),fragileIdx:r1(fragileIdx),ctrlCorrupt:r2(ctrlCorrupt),
+      // P4
+      internet:r1(internet),urban:r1(urban),popGrowth:r2(popGrowth),literacy:r1(literacy),
+      hdi:Math.round(hdi*1000)/1000,
+      youthUnemploy:r1(youthUnemploy),gini:r1(gini),lifeExpect:r1(lifeExpect),
+      carbonIntensity:Math.round(carbonIntensity),genderIneq:r2(genderIneq),
+      // P5
+      comExpose,crisisHist,imfProg,sancExp,tcRisk,
+      politicalRisk:r1(politicalRisk),conflictProx,electionRisk,
+      socialUnrest:r1(socialUnrest),defaultHist,
+      // P6
+      lending,trading,cashPlacings,derivatives,sft,otherExp,totalExp,
+      expLimit,expUtil:r2(expUtil),headroom,collateral,netExp,
+      // P7
+      stressFX,stressRates,stressEquity,stressCredit,stressTotal,
+      stressLimit,stressUtil:r2(stressUtil),
+      rwaCredit,rwaMarket,rwaTotal,expectedLoss,lgd,t1Ratio,
+      // P8
+      compositeRisk:r1(compositeRisk),cdsZ:r2(cdsZ),fxYtd:r1(fxYtd),watchlist,
+      equityYtd:r1(equityYtd),fxVol:r1(fxVol),bondYield:r1(bondYield),
+      newsSentiment:r1(newsSentiment),ratingOutlook,cds1yChg:Math.round(cds1yChg),impliedPD:r1(impliedPD)
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  NORMALISATION
+// ══════════════════════════════════════════════════════
+let DATASET=[];
+let _cache={};
+function allV(key){
+  if(!_cache[key])_cache[key]=[...DATASET.map(d=>d[key]).filter(v=>typeof v==='number')].sort((a,b)=>a-b);
+  return _cache[key];
+}
+function pctScore(val,key,hb){
+  const sorted=allV(key);
+  const rank=sorted.filter(v=>v<=val).length/sorted.length;
+  const risk=hb?(1-rank):rank;
+  return Math.max(1,Math.min(20,Math.round(risk*19+1)));
+}
+function ratingToScore(r){
+  const m={AAA:1,"AA+":2,AA:3,"AA-":4,"A+":5,A:6,"A-":7,"BBB+":8,BBB:9,"BBB-":10,"BB+":11,BB:12,"BB-":13,"B+":14,B:15,"B-":16,"CCC+":17,CCC:18,"CCC-":19,CC:19,SD:20,D:20};
+  return m[r]||10;
+}
+function catAvg(sc,keys){
+  const v=keys.map(k=>sc[k]).filter(x=>typeof x==='number');
+  return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length*10)/10:0;
+}
+function overallScore(sc){
+  const v=Object.values(sc).filter(x=>typeof x==='number');
+  return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length*10)/10:0;
+}
+
+// Categorical → numeric mappings for normalisation
+function comExpScore(v){return{High:17,Medium:11,Low:6,Minimal:2}[v]||8;}
+function crisisScore(v){return v?16:3;}
+function imfProgScore(v){return[3,10,17][v]||3;}
+function sancScore(v){return{High:18,Medium:12,Low:6,None:2}[v]||2;}
+function tcScore(v){return Math.round(1+(v-1)*19/4);}
+function watchlistScore(v){return v==='YES'?18:v==='MONITOR'?10:3;}
+function outlookScore(v){return{[-1]:3,[0]:8,[1]:14,[2]:18}[v]||8;}
+
+function scores(d){
+  const P=(k,hb)=>pctScore(d[k],k,hb);
+  return{
+    // P1 Macro
+    gdp:P('gdp',true),gdpPerCap:P('gdpPerCap',true),gdpGrowth:P('gdpGrowth',true),
+    inflation:P('inflation',false),unemployment:P('unemployment',false),
+    currentAccount:P('currentAccount',true),fiscalBalance:P('fiscalBalance',true),
+    publicDebt:P('publicDebt',false),tradeBalance:P('tradeBalance',true),gdpTrend:P('gdpTrend',true),
+    // P2 External
+    fxReserves:P('fxReserves',true),stDebt:P('stDebt',false),cds:P('cds',false),
+    rating:ratingToScore(d.rating),exports:P('exports',true),fdi:P('fdi',true),
+    extDebtGdp:P('extDebtGdp',false),importCover:P('importCover',true),
+    remittances:P('remittances',true),bondSpread:P('bondSpread',false),
+    // P3 Governance
+    polStab:P('polStab',true),ruleOfLaw:P('ruleOfLaw',true),corruption:P('corruption',true),
+    eodb:P('eodb',true),pressFreedom:P('pressFreedom',true),voiceAcct:P('voiceAcct',true),
+    govtEffect:P('govtEffect',true),regQuality:P('regQuality',true),
+    fragileIdx:P('fragileIdx',false),ctrlCorrupt:P('ctrlCorrupt',true),
+    // P4 Social
+    internet:P('internet',true),urban:P('urban',true),popGrowth:P('popGrowth',false),
+    literacy:P('literacy',true),hdi:P('hdi',true),
+    youthUnemploy:P('youthUnemploy',false),gini:P('gini',false),lifeExpect:P('lifeExpect',true),
+    carbonIntensity:P('carbonIntensity',false),genderIneq:P('genderIneq',false),
+    // P5 Risk Flags
+    comExpose:comExpScore(d.comExpose),crisisHist:crisisScore(d.crisisHist),
+    imfProg:imfProgScore(d.imfProg),sancExp:sancScore(d.sancExp),tcRisk:tcScore(d.tcRisk),
+    politicalRisk:P('politicalRisk',false),conflictProx:P('conflictProx',false),
+    electionRisk:P('electionRisk',false),socialUnrest:P('socialUnrest',false),
+    defaultHist:P('defaultHist',false),
+    // P6 Exposure
+    expUtil:P('expUtil',false),netExp:P('netExp',false),
+    lending:P('lending',false),trading:P('trading',false),cashPlacings:P('cashPlacings',false),
+    derivatives:P('derivatives',false),sft:P('sft',false),otherExp:P('otherExp',false),
+    headroom:P('headroom',true),collateral:P('collateral',true),
+    // P7 Stress
+    stressFX:P('stressFX',false),stressRates:P('stressRates',false),
+    stressEquity:P('stressEquity',false),stressCredit:P('stressCredit',false),
+    stressUtil:P('stressUtil',false),rwaTotal:P('rwaTotal',false),
+    expectedLoss:P('expectedLoss',false),lgd:P('lgd',false),
+    t1Ratio:P('t1Ratio',false),stressTotal:P('stressTotal',false),
+    // P8 Market
+    compositeRisk:P('compositeRisk',false),cdsZ:P('cdsZ',false),fxYtd:P('fxYtd',true),
+    watchlist:watchlistScore(d.watchlist),equityYtd:P('equityYtd',true),
+    fxVol:P('fxVol',false),bondYield:P('bondYield',false),
+    newsSentiment:P('newsSentiment',true),ratingOutlook:outlookScore(d.ratingOutlook),
+    cds1yChg:P('cds1yChg',false),impliedPD:P('impliedPD',false)
+  };
+}
+
+// ══════════════════════════════════════════════════════
+//  PILLAR DEFINITIONS  (10 attrs each = 80 total)
+// ══════════════════════════════════════════════════════
+const CATS=[
+  {
+    id:'macro',label:'MACROECONOMIC',icon:'📊',
+    attrs:[
+      {key:'gdp',         name:'GDP (Nominal)',          fmt:d=>`$${d.gdp.toLocaleString()}bn`,         hb:true},
+      {key:'gdpPerCap',   name:'GDP per Capita',         fmt:d=>`$${d.gdpPerCap.toLocaleString()}`,     hb:true},
+      {key:'gdpGrowth',   name:'Real GDP Growth',        fmt:d=>`${d.gdpGrowth>0?'+':''}${d.gdpGrowth}%`,hb:true},
+      {key:'gdpTrend',    name:'GDP Trend (3yr CAGR)',   fmt:d=>`${d.gdpTrend>0?'+':''}${d.gdpTrend}%`, hb:true},
+      {key:'inflation',   name:'Inflation',              fmt:d=>`${d.inflation}%`,                      hb:false},
+      {key:'unemployment',name:'Unemployment',           fmt:d=>`${d.unemployment}%`,                   hb:false},
+      {key:'currentAccount',name:'Current Account',     fmt:d=>`${d.currentAccount>0?'+':''}${d.currentAccount}% GDP`,hb:true},
+      {key:'fiscalBalance',name:'Fiscal Balance',        fmt:d=>`${d.fiscalBalance>0?'+':''}${d.fiscalBalance}% GDP`, hb:true},
+      {key:'publicDebt',  name:'Public Debt / GDP',      fmt:d=>`${d.publicDebt}%`,                     hb:false},
+      {key:'tradeBalance',name:'Trade Balance',          fmt:d=>`$${d.tradeBalance>0?'+':''}${r1(d.tradeBalance)}bn`, hb:true},
+    ]
+  },
+  {
+    id:'external',label:'EXTERNAL POSITION',icon:'🌐',
+    attrs:[
+      {key:'fxReserves',  name:'FX Reserves',            fmt:d=>`${d.fxReserves} mths`,                 hb:true},
+      {key:'importCover', name:'Import Cover',           fmt:d=>`${d.importCover} mths`,                hb:true},
+      {key:'stDebt',      name:'Short-Term Ext. Debt',   fmt:d=>`${d.stDebt}% of ext debt`,             hb:false},
+      {key:'extDebtGdp',  name:'External Debt / GDP',    fmt:d=>`${d.extDebtGdp}%`,                     hb:false},
+      {key:'cds',         name:'5Y Sovereign CDS',       fmt:d=>`${d.cds.toLocaleString()} bps`,        hb:false},
+      {key:'bondSpread',  name:'Bond Spread vs UST',     fmt:d=>`${d.bondSpread.toLocaleString()} bps`, hb:false},
+      {key:'rating',      name:'Sovereign Rating',       fmt:d=>`${d.rating}`,                          hb:true},
+      {key:'exports',     name:'Exports / GDP',          fmt:d=>`${d.exports}%`,                        hb:true},
+      {key:'fdi',         name:'FDI Inflows / GDP',      fmt:d=>`${d.fdi}%`,                            hb:true},
+      {key:'remittances', name:'Remittances / GDP',      fmt:d=>`${d.remittances}%`,                    hb:true},
+    ]
+  },
+  {
+    id:'governance',label:'GOVERNANCE',icon:'⚖️',
+    attrs:[
+      {key:'polStab',     name:'Political Stability',    fmt:d=>`${d.polStab} / 3.0`,                   hb:true},
+      {key:'ruleOfLaw',   name:'Rule of Law',            fmt:d=>`${d.ruleOfLaw} / 3.0`,                 hb:true},
+      {key:'corruption',  name:'CPI Score',              fmt:d=>`${d.corruption} / 100`,                hb:true},
+      {key:'ctrlCorrupt', name:'Control of Corruption',  fmt:d=>`${d.ctrlCorrupt} / 3.0`,               hb:true},
+      {key:'eodb',        name:'Ease of Business',       fmt:d=>`${d.eodb} / 100`,                      hb:true},
+      {key:'govtEffect',  name:'Govt Effectiveness',     fmt:d=>`${d.govtEffect} / 3.0`,                hb:true},
+      {key:'regQuality',  name:'Regulatory Quality',     fmt:d=>`${d.regQuality} / 3.0`,                hb:true},
+      {key:'voiceAcct',   name:'Voice & Accountability', fmt:d=>`${d.voiceAcct} / 3.0`,                 hb:true},
+      {key:'pressFreedom',name:'Press Freedom',          fmt:d=>`${d.pressFreedom} / 100`,              hb:true},
+      {key:'fragileIdx',  name:'Fragile States Index',   fmt:d=>`${d.fragileIdx} / 120`,                hb:false},
+    ]
+  },
+  {
+    id:'social',label:'SOCIAL & STRUCTURAL',icon:'👥',
+    attrs:[
+      {key:'hdi',         name:'HDI Score',              fmt:d=>`${d.hdi}`,                             hb:true},
+      {key:'literacy',    name:'Literacy Rate',          fmt:d=>`${d.literacy}%`,                       hb:true},
+      {key:'internet',    name:'Internet Penetration',   fmt:d=>`${d.internet}%`,                       hb:true},
+      {key:'lifeExpect',  name:'Life Expectancy',        fmt:d=>`${d.lifeExpect} yrs`,                  hb:true},
+      {key:'urban',       name:'Urbanisation',           fmt:d=>`${d.urban}%`,                          hb:true},
+      {key:'unemployment',name:'Unemployment',           fmt:d=>`${d.unemployment}%`,                   hb:false},
+      {key:'youthUnemploy',name:'Youth Unemployment',   fmt:d=>`${d.youthUnemploy}%`,                   hb:false},
+      {key:'gini',        name:'Gini Coefficient',       fmt:d=>`${d.gini}`,                            hb:false},
+      {key:'carbonIntensity',name:'Carbon Intensity',   fmt:d=>`${d.carbonIntensity} t/$mGDP`,          hb:false},
+      {key:'genderIneq',  name:'Gender Inequality Idx', fmt:d=>`${d.genderIneq}`,                      hb:false},
+    ]
+  },
+  {
+    id:'riskflags',label:'RISK FLAGS',icon:'🚨',
+    attrs:[
+      {key:'crisisHist',  name:'Crisis (5yr History)',   fmt:d=>d.crisisHist?'Yes':'No',                hb:false},
+      {key:'defaultHist', name:'Default History (50yr)', fmt:d=>`${d.defaultHist} events`,              hb:false},
+      {key:'imfProg',     name:'IMF Programme',          fmt:d=>['None','Precautionary','Active'][d.imfProg]||'None', hb:false},
+      {key:'sancExp',     name:'Sanctions Exposure',     fmt:d=>`${d.sancExp}`,                         hb:false},
+      {key:'tcRisk',      name:'Transfer & Convert. Risk',fmt:d=>`${d.tcRisk} / 5`,                    hb:false},
+      {key:'politicalRisk',name:'Political Risk Rating', fmt:d=>`${d.politicalRisk} / 100`,             hb:false},
+      {key:'conflictProx',name:'Conflict Proximity',     fmt:d=>`${d.conflictProx} / 10`,               hb:false},
+      {key:'electionRisk',name:'Election Risk',          fmt:d=>`${d.electionRisk} / 5`,                hb:false},
+      {key:'socialUnrest',name:'Social Unrest Index',    fmt:d=>`${d.socialUnrest} / 10`,               hb:false},
+      {key:'comExpose',   name:'Commodity Exposure',     fmt:d=>`${d.comExpose}`,                       hb:false},
+    ]
+  },
+  {
+    id:'exposure',label:'BANK EXPOSURE',icon:'🏦',
+    subheaders:{lending:'Exposure by Type ($mm)', expUtil:'Utilisation & Net'},
+    attrs:[
+      {key:'lending',     name:'Lending',                fmt:d=>`$${d.lending.toLocaleString()}mm`,     hb:false, sub:'type'},
+      {key:'trading',     name:'Trading',                fmt:d=>`$${d.trading.toLocaleString()}mm`,     hb:false, sub:'type'},
+      {key:'cashPlacings',name:'Cash Placings',          fmt:d=>`$${d.cashPlacings.toLocaleString()}mm`,hb:false, sub:'type'},
+      {key:'derivatives', name:'Derivatives',            fmt:d=>`$${d.derivatives.toLocaleString()}mm`, hb:false, sub:'type'},
+      {key:'sft',         name:'Sec. Financing (SFT)',   fmt:d=>`$${d.sft.toLocaleString()}mm`,         hb:false, sub:'type'},
+      {key:'otherExp',    name:'Other',                  fmt:d=>`$${d.otherExp.toLocaleString()}mm`,    hb:false, sub:'type'},
+      {key:'expUtil',     name:'Limit Utilisation',      fmt:d=>`${Math.round(d.expUtil*100)}%`,        hb:false, sub:'util'},
+      {key:'headroom',    name:'Headroom to Limit',      fmt:d=>`$${d.headroom.toLocaleString()}mm`,    hb:true,  sub:'util'},
+      {key:'collateral',  name:'Collateral Held',        fmt:d=>`$${d.collateral.toLocaleString()}mm`,  hb:true,  sub:'util'},
+      {key:'netExp',      name:'Net Exposure',           fmt:d=>`$${d.netExp.toLocaleString()}mm`,      hb:false, sub:'util'},
+    ]
+  },
+  {
+    id:'stress',label:'STRESS & CAPITAL',icon:'📉',
+    attrs:[
+      {key:'stressFX',    name:'FX Stress Loss',         fmt:d=>`$${d.stressFX.toLocaleString()}mm`,    hb:false},
+      {key:'stressRates', name:'Rates Stress Loss',      fmt:d=>`$${d.stressRates.toLocaleString()}mm`, hb:false},
+      {key:'stressEquity',name:'Equity Stress Loss',     fmt:d=>`$${d.stressEquity.toLocaleString()}mm`,hb:false},
+      {key:'stressCredit',name:'Credit Stress Loss',     fmt:d=>`$${d.stressCredit.toLocaleString()}mm`,hb:false},
+      {key:'stressTotal', name:'Total Stress Loss',      fmt:d=>`$${d.stressTotal.toLocaleString()}mm`, hb:false},
+      {key:'stressUtil',  name:'Stress Limit Util.',     fmt:d=>`${Math.round(d.stressUtil*100)}%`,     hb:false},
+      {key:'rwaTotal',    name:'Total RWA',              fmt:d=>`$${d.rwaTotal.toLocaleString()}mm`,    hb:false},
+      {key:'expectedLoss',name:'Expected Loss',          fmt:d=>`$${d.expectedLoss.toLocaleString()}mm`,hb:false},
+      {key:'lgd',         name:'LGD Assumption',         fmt:d=>`${Math.round(d.lgd*100)}%`,            hb:false},
+      {key:'t1Ratio',     name:'Stress / Tier 1 Cap.',   fmt:d=>`${Math.round(d.t1Ratio*100)}%`,        hb:false},
+    ]
+  },
+  {
+    id:'market',label:'MARKET SIGNALS',icon:'📡',
+    attrs:[
+      {key:'cds',         name:'5Y Sovereign CDS',       fmt:d=>`${d.cds.toLocaleString()} bps`,        hb:false},
+      {key:'cds1yChg',    name:'CDS Change (1Y, bps)',   fmt:d=>`${d.cds1yChg>0?'+':''}${d.cds1yChg}`, hb:false},
+      {key:'cdsZ',        name:'CDS Z-Score vs 1Y Avg',  fmt:d=>`${d.cdsZ>0?'+':''}${d.cdsZ}σ`,        hb:false},
+      {key:'impliedPD',   name:'Implied Default Prob.',  fmt:d=>`${d.impliedPD}%`,                      hb:false},
+      {key:'bondYield',   name:'10Y Govt Bond Yield',    fmt:d=>`${d.bondYield}%`,                      hb:false},
+      {key:'fxYtd',       name:'FX YTD Change',          fmt:d=>`${d.fxYtd>0?'+':''}${d.fxYtd}%`,      hb:true},
+      {key:'fxVol',       name:'FX 30d Realised Vol.',   fmt:d=>`${d.fxVol}%`,                          hb:false},
+      {key:'equityYtd',   name:'Equity Mkt YTD',         fmt:d=>`${d.equityYtd>0?'+':''}${d.equityYtd}%`,hb:true},
+      {key:'newsSentiment',name:'News Sentiment',        fmt:d=>`${d.newsSentiment>0?'+':''}${d.newsSentiment} / 5`,hb:true},
+      {key:'ratingOutlook',name:'Rating Outlook',        fmt:d=>['Positive','Stable','Negative','Watch Neg'][d.ratingOutlook+1]||'Stable',hb:false},
+    ]
+  },
+];
+
+const CAT_KEYS={};
+CATS.forEach(c=>{CAT_KEYS[c.id]=c.attrs.map(a=>a.key);});
+
+// ══════════════════════════════════════════════════════
+//  COLOUR HELPERS
+// ══════════════════════════════════════════════════════
+function scClass(s){
+  if(s>=19)return'sc-crit';if(s>=15)return'sc-hi';if(s>=10)return'sc-med';if(s>=5)return'sc-low';return'sc-vlow';
+}
+function scColors(s){
+  if(s>=19)return{bg:'var(--red-bg)', bdr:'var(--red-bdr)', txt:'var(--red2)',bar:'#d02020'};
+  if(s>=15)return{bg:'var(--hi-bg)',  bdr:'var(--hi-bdr)',  txt:'var(--hi)', bar:'#c05000'};
+  if(s>=10)return{bg:'var(--med-bg)', bdr:'var(--med-bdr)', txt:'var(--med)',bar:'#b0980a'};
+  if(s>=5) return{bg:'var(--low-bg)', bdr:'var(--low-bdr)', txt:'var(--low)',bar:'#2a7838'};
+  return          {bg:'var(--vlow-bg)',bdr:'var(--vlow-bdr)',txt:'var(--vlow)',bar:'#145028'};
+}
+function ratingLabel(s){
+  if(s>=16)return'CRITICAL RISK';if(s>=12)return'HIGH RISK';if(s>=8)return'MODERATE RISK';
+  if(s>=5)return'LOW RISK';return'VERY LOW RISK';
+}
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let activeCIdx=18;
+let activeFilter='all';
+
+function selectCountry(v){activeCIdx=parseInt(v);render();}
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  renderColumns();
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════
+function render(){
+  const d=DATASET[activeCIdx];
+  const sc=scores(d);
+  const ov=overallScore(sc);
+  const oc=scColors(ov);
+  const rl=ratingLabel(ov);
+
+  document.getElementById('mast-country').textContent=d.name;
+  // flag emoji shown inline — radar SVG stays in mast-flag slot
+  document.getElementById('mc-val').textContent=ov.toFixed(1);
+  document.getElementById('mc-val').style.color=oc.bar;
+  const pill=document.getElementById('mast-pill');
+  pill.textContent=rl;pill.style.background=oc.bg;pill.style.borderColor=oc.bdr;pill.style.color=oc.txt;
+  document.getElementById('ms-rating').textContent=d.rating;
+  document.getElementById('ms-cds').textContent=d.cds.toLocaleString();
+  document.getElementById('ms-exp').textContent='$'+d.totalExp.toLocaleString();
+  const wlEl=document.getElementById('ms-watchlist');
+  wlEl.textContent=d.watchlist;
+  wlEl.style.color=d.watchlist==='YES'?'var(--red2)':d.watchlist==='MONITOR'?'var(--hi)':'var(--low)';
+  document.getElementById('cpicker').value=activeCIdx;
+
+  renderLeftSidebar(d,sc,ov);
+  renderColumns();
+  renderRightSidebar(d,sc,ov,rl,oc);
+  renderIntelBar(d,sc);
+}
+
+// ══════════════════════════════════════════════════════
+//  INTEL BAR — AI vulnerability summaries
+// ══════════════════════════════════════════════════════
+const INTEL={
+  "Turkey":{
+    rating:"BB-",
+    summary:`<strong>Turkey</strong> presents a <em>High Risk</em> profile driven by a deeply entrenched monetary-fiscal imbalance. <strong>Inflation</strong> has structurally de-anchored — running above 60% in 2024 — reflecting years of heterodox rate policy that eroded CBRT credibility and compressed real yields to sharply negative levels. <strong>FX vulnerability</strong> is acute: the lira has lost over 80% of its value in five years, with reserves chronically thin once swap obligations are netted out, leaving the currency exposed to sudden stops. <strong>External financing risk</strong> is elevated; a wide current account deficit persists alongside high short-term external debt rollovers, creating meaningful refinancing pressure each quarter. <strong>Governance and institutional risk</strong> — including central bank independence and rule-of-law concerns — compounds these vulnerabilities, as policy credibility is still being rebuilt following the 2021–23 rate experiment. Near-term stabilisation efforts (orthodox rate hikes from mid-2023) have begun cooling inflation, but the transmission is slow and the sovereign remains rated sub-investment-grade across all major agencies.`,
+    flags:["Inflation 19","FX Volatility 18","Ext. Financing 18","CB Credibility 18","Curr. Account 17","Reserves 17"]
+  }
+};
+const INTEL_DEFAULT="Select a country above to load the AI-generated vulnerability assessment for that sovereign.";
+
+function renderIntelBar(d,sc){
+  const intel=INTEL[d.name];
+  document.getElementById('intel-country-name').textContent=d.name;
+
+  // chips: overall risk band
+  const ov=overallScore(sc);
+  const oc=scColors(ov);
+  const rl=ratingLabel(ov);
+  document.getElementById('intel-chips').innerHTML=
+    `<span class="intel-chip ${scClass(ov)}">${rl}</span>`+
+    `<span class="intel-chip" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.45);">${d.rating}</span>`;
+
+  if(intel){
+    document.getElementById('intel-summary-text').innerHTML=intel.summary;
+    document.getElementById('intel-attr-tags').innerHTML=
+      intel.flags.map(f=>{
+        const score=parseInt(f.match(/\d+$/)?.[0]||'0');
+        return `<span class="iat ${scClass(score)}">${f}</span>`;
+      }).join('');
+    document.getElementById('intel-ts').innerHTML=
+      `<div class="intel-ts-label">Assessment</div>
+       <div class="intel-ts-val">AI · Feb 2025</div>
+       <div class="intel-ts-val" style="margin-top:4px;font-size:.5rem;color:rgba(255,255,255,.2);">IMF WEO Oct 2024</div>`;
+  } else {
+    document.getElementById('intel-summary-text').innerHTML=
+      `<span style="color:rgba(255,255,255,.28);font-style:italic;">No AI assessment available for ${d.name}. Showing scored attribute data only.</span>`;
+    document.getElementById('intel-attr-tags').innerHTML='';
+    document.getElementById('intel-ts').innerHTML='';
+  }
+}
+
+function renderLeftSidebar(d,sc,ov){
+  let html='';
+  CATS.forEach(cat=>{
+    const avg=catAvg(sc,CAT_KEYS[cat.id]);
+    const c=scColors(avg);
+    html+=`<div class="cat-summary-row" onclick="scrollToCat('${cat.id}')">
+      <span class="csr-name">${cat.icon} ${cat.label}</span>
+      <span class="csr-badge" style="background:${c.bg};border-color:${c.bdr};color:${c.txt}">${avg.toFixed(1)}</span>
+    </div>`;
+  });
+  document.getElementById('cat-summary-list').innerHTML=html;
+
+  const wlColor=d.watchlist==='YES'?'var(--red2)':d.watchlist==='MONITOR'?'var(--hi)':'var(--low)';
+  document.getElementById('info-grid').innerHTML=`
+    <div class="ig-cell"><div class="ig-label">Rating</div><div class="ig-val">${d.rating}</div></div>
+    <div class="ig-cell"><div class="ig-label">CDS bps</div><div class="ig-val">${d.cds.toLocaleString()}</div></div>
+    <div class="ig-cell"><div class="ig-label">Watchlist</div><div class="ig-val" style="color:${wlColor}">${d.watchlist}</div></div>
+    <div class="ig-cell"><div class="ig-label">Score / 20</div><div class="ig-val">${ov.toFixed(1)}</div></div>
+    <div class="ig-cell"><div class="ig-label">Inflation</div><div class="ig-val">${d.inflation}%</div></div>
+    <div class="ig-cell"><div class="ig-label">Pub. Debt</div><div class="ig-val">${d.publicDebt}%</div></div>
+  `;
+
+  const ranked=DATASET.map((dd,idx)=>{const s=scores(dd);return{name:dd.name,idx,ov:overallScore(s)};}).sort((a,b)=>b.ov-a.ov);
+  const myRank=ranked.findIndex(x=>x.idx===activeCIdx);
+  let ph='';
+  for(let r=Math.max(0,myRank-3);r<=Math.min(ranked.length-1,myRank+3);r++){
+    const p=ranked[r];const pc=scColors(p.ov);
+    ph+=`<div class="peer-row">
+      <span class="pr-rank">${r+1}</span>
+      <span class="pr-name ${p.idx===activeCIdx?'me':''}">${FLAGS[p.name]||''} ${p.name}</span>
+      <span class="pr-score" style="color:${pc.bar}">${p.ov.toFixed(1)}</span>
+    </div>`;
+  }
+  document.getElementById('peer-list').innerHTML=ph;
+}
+
+function scrollToCat(id){
+  const el=document.querySelector(`[data-cat="${id}"]`);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderColumns(){
+  const d=DATASET[activeCIdx];
+  const sc=scores(d);
+  const sort=document.getElementById('sort-sel').value;
+  let html='';
+
+  CATS.forEach(cat=>{
+    let attrs=[...cat.attrs];
+    if(activeFilter==='crit')attrs=attrs.filter(a=>sc[a.key]>=19);
+    else if(activeFilter==='hi')attrs=attrs.filter(a=>sc[a.key]>=15&&sc[a.key]<=18);
+    else if(activeFilter==='med')attrs=attrs.filter(a=>sc[a.key]>=10&&sc[a.key]<=14);
+    else if(activeFilter==='low')attrs=attrs.filter(a=>sc[a.key]>=5&&sc[a.key]<=9);
+    else if(activeFilter==='vlow')attrs=attrs.filter(a=>sc[a.key]<=4);
+    if(!attrs.length)return;
+
+    if(sort==='desc')attrs=[...attrs].sort((a,b)=>sc[b.key]-sc[a.key]);
+    else if(sort==='asc')attrs=[...attrs].sort((a,b)=>sc[a.key]-sc[b.key]);
+    else if(sort==='alpha')attrs=[...attrs].sort((a,b)=>a.name.localeCompare(b.name));
+
+    const avg=catAvg(sc,cat.attrs.map(a=>a.key));
+    const ac=scColors(avg);
+
+    html+=`<div class="attr-panel" data-cat="${cat.id}">
+      <div class="ap-header">
+        <span class="ap-title">${cat.icon} ${cat.label}</span>
+        <span class="ap-avg" style="background:${ac.bg};border-color:${ac.bdr};color:${ac.txt}">${avg.toFixed(1)}</span>
+      </div>`;
+
+    attrs.forEach(attr=>{
+      const s=sc[attr.key];
+      const cls=scClass(s);
+      const raw=attr.fmt(d);
+      const hl=s>=19||s<=4?' highlighted':'';
+      html+=`<div class="attr-row${hl}">
+        <span class="ar-name">${attr.name}</span>
+        <span class="ar-raw">${raw}</span>
+        <span class="ar-score ${cls}">${s}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  if(!html)html=`<div style="grid-column:1/-1;padding:50px;text-align:center;color:var(--ink3);font-family:'Playfair Display',serif;font-style:italic">No indicators match this filter</div>`;
+  document.getElementById('attrs-columns').innerHTML=html;
+}
+
+function renderRightSidebar(d,sc,ov,rl,oc){
+  document.getElementById('sr-name').textContent=d.name;
+  const ring=document.getElementById('sr-ring');
+  ring.style.borderColor=oc.bar;
+  document.getElementById('sr-ring-val').textContent=ov.toFixed(1);
+  document.getElementById('sr-ring-val').style.color=oc.bar;
+  document.getElementById('sr-rating-big').textContent=d.rating;
+  document.getElementById('sr-rating-big').style.color=oc.bar;
+  const wlC=d.watchlist==='YES'?'var(--red2)':d.watchlist==='MONITOR'?'var(--hi)':'var(--low)';
+  const wlBg=d.watchlist==='YES'?'var(--red-bg)':d.watchlist==='MONITOR'?'var(--hi-bg)':'var(--low-bg)';
+  const wlBdr=d.watchlist==='YES'?'var(--red-bdr)':d.watchlist==='MONITOR'?'var(--hi-bdr)':'var(--low-bdr)';
+  document.getElementById('sr-wl-badge').innerHTML=`<span class="wl-badge" style="background:${wlBg};border-color:${wlBdr};color:${wlC}">${d.watchlist} WATCHLIST</span>`;
+
+  let bh='';
+  CATS.forEach(cat=>{
+    const avg=catAvg(sc,CAT_KEYS[cat.id]);const c=scColors(avg);
+    bh+=`<div class="mini-bar-row">
+      <span class="mbr-label">${cat.label.replace('&','&amp;').split(' ').slice(0,2).join(' ')}</span>
+      <div class="mbr-track"><div class="mbr-fill" style="width:${((avg-1)/19*100).toFixed(1)}%;background:${c.bar}"></div></div>
+      <span class="mbr-score" style="color:${c.bar}">${avg.toFixed(1)}</span>
+    </div>`;
+  });
+  document.getElementById('sr-cat-bars').innerHTML=bh;
+
+  // Exposure
+  document.getElementById('sr-totexp').textContent='$'+d.totalExp.toLocaleString()+'mm';
+  document.getElementById('sr-lend').textContent='$'+d.lending.toLocaleString()+'mm';
+  document.getElementById('sr-trad').textContent='$'+d.trading.toLocaleString()+'mm';
+  document.getElementById('sr-deriv').textContent='$'+d.derivatives.toLocaleString()+'mm';
+  document.getElementById('sr-sft').textContent='$'+d.sft.toLocaleString()+'mm';
+
+  // Stress
+  document.getElementById('sr-strtot').textContent='$'+d.stressTotal.toLocaleString()+'mm';
+  document.getElementById('sr-strfx').textContent='$'+d.stressFX.toLocaleString()+'mm';
+  document.getElementById('sr-strrates').textContent='$'+d.stressRates.toLocaleString()+'mm';
+  document.getElementById('sr-streq').textContent='$'+d.stressEquity.toLocaleString()+'mm';
+  document.getElementById('sr-strcr').textContent='$'+d.stressCredit.toLocaleString()+'mm';
+}
+
+// ══════════════════════════════════════════════════════
+//  IMF DATA FETCH & OVERLAY
+// ══════════════════════════════════════════════════════
+
+// IMF ISO3 codes for our 100 countries
+const ISO3={
+  "United States":"USA","China":"CHN","Germany":"DEU","Japan":"JPN","India":"IND",
+  "United Kingdom":"GBR","France":"FRA","Italy":"ITA","Brazil":"BRA","Canada":"CAN",
+  "Russia":"RUS","South Korea":"KOR","Australia":"AUS","Spain":"ESP","Mexico":"MEX",
+  "Indonesia":"IDN","Netherlands":"NLD","Saudi Arabia":"SAU","Turkey":"TUR","Switzerland":"CHE",
+  "Poland":"POL","Sweden":"SWE","Belgium":"BEL","Argentina":"ARG","Norway":"NOR",
+  "Israel":"ISR","Austria":"AUT","United Arab Emirates":"ARE","Thailand":"THA","Nigeria":"NGA",
+  "Singapore":"SGP","Malaysia":"MYS","South Africa":"ZAF","Denmark":"DNK","Philippines":"PHL",
+  "Bangladesh":"BGD","Egypt":"EGY","Vietnam":"VNM","Iran":"IRN","Pakistan":"PAK",
+  "Colombia":"COL","Romania":"ROU","Czech Republic":"CZE","Chile":"CHL","Finland":"FIN",
+  "Iraq":"IRQ","Portugal":"PRT","Peru":"PER","New Zealand":"NZL","Greece":"GRC",
+  "Kazakhstan":"KAZ","Hungary":"HUN","Algeria":"DZA","Qatar":"QAT","Ethiopia":"ETH",
+  "Slovakia":"SVK","Kuwait":"KWT","Ukraine":"UKR","Kenya":"KEN","Morocco":"MAR",
+  "Ecuador":"ECU","Dominican Republic":"DOM","Ghana":"GHA","Tanzania":"TZA","Guatemala":"GTM",
+  "Oman":"OMN","Luxembourg":"LUX","Myanmar":"MMR","Costa Rica":"CRI","Panama":"PAN",
+  "Bulgaria":"BGR","Serbia":"SRB","Croatia":"HRV","Libya":"LBY","Belarus":"BLR",
+  "Uzbekistan":"UZB","Sri Lanka":"LKA","Uruguay":"URY","Azerbaijan":"AZE","Bolivia":"BOL",
+  "Cameroon":"CMR","Ivory Coast":"CIV","Jordan":"JOR","Lithuania":"LTU","Uganda":"UGA",
+  "Paraguay":"PRY","Sudan":"SDN","Latvia":"LVA","Tunisia":"TUN","Bahrain":"BHR",
+  "El Salvador":"SLV","Honduras":"HND","Cyprus":"CYP","Zambia":"ZMB","Senegal":"SEN",
+  "Slovenia":"SVN","Zimbabwe":"ZWE","Nepal":"NPL","Cambodia":"KHM","Bosnia":"BIH"
+};
+
+// ══════════════════════════════════════════════════════
+//  HARDCODED LIVE DATA — IMF WEO Oct 2024 + World Bank WDI
+//  (Embedded to avoid CORS — no runtime fetches needed)
+// ══════════════════════════════════════════════════════
+
+// gdp = nominal GDP USD bn (2024)
+// gdpPerCap = GDP per capita USD (2024)
+// gdpGrowth = real GDP growth % (2024)
+// inflation = CPI avg % (2024)
+// unemployment = % (2024)
+// currentAccount = % GDP (2024)
+// fiscalBalance = % GDP (2024)
+// publicDebt = % GDP (2024)
+// lifeExpect = years (latest WB)
+// gini = Gini index (latest WB)
+// internet = % users (latest WB)
+// literacy = % (latest WB)
+// fdi = FDI net inflows % GDP (latest WB)
+// fxReserves = months of import cover (latest WB)
+// remittances = % GDP (latest WB)
+// carbonIntensity = CO2 kg per 2017 PPP $ GDP (latest WB)
+
+const LIVE={
+  "United States":     {gdp:28780,gdpPerCap:85370,gdpGrowth:2.8,inflation:2.9,unemployment:4.0,currentAccount:-3.3,fiscalBalance:-6.5,publicDebt:122.3,lifeExpect:77.5,gini:39.7,internet:91.8,literacy:99.0,fdi:1.8,fxReserves:2.4,remittances:0.1,carbonIntensity:0.23},
+  "China":             {gdp:18530,gdpPerCap:13140,gdpGrowth:4.8,inflation:0.2,unemployment:5.1,currentAccount:1.5,fiscalBalance:-7.4,publicDebt:88.6,lifeExpect:78.6,gini:38.2,internet:73.7,literacy:96.8,fdi:0.4,fxReserves:13.5,remittances:0.1,carbonIntensity:0.55},
+  "Germany":           {gdp:4590,gdpPerCap:54290,gdpGrowth:-0.2,inflation:2.5,unemployment:3.4,currentAccount:5.9,fiscalBalance:-2.1,publicDebt:63.7,lifeExpect:81.1,gini:31.9,internet:91.5,literacy:99.0,fdi:0.8,fxReserves:2.1,remittances:0.5,carbonIntensity:0.17},
+  "Japan":             {gdp:4110,gdpPerCap:33130,gdpGrowth:-0.1,inflation:2.5,unemployment:2.5,currentAccount:3.9,fiscalBalance:-3.9,publicDebt:251.9,lifeExpect:84.3,gini:32.9,internet:88.9,literacy:99.0,fdi:0.5,fxReserves:13.2,remittances:0.1,carbonIntensity:0.21},
+  "India":             {gdp:3890,gdpPerCap:2730,gdpGrowth:7.0,inflation:4.9,unemployment:8.1,currentAccount:-1.1,fiscalBalance:-5.6,publicDebt:83.9,lifeExpect:72.0,gini:35.7,internet:46.3,literacy:77.7,fdi:1.5,fxReserves:11.0,remittances:3.4,carbonIntensity:0.44},
+  "United Kingdom":    {gdp:3340,gdpPerCap:49140,gdpGrowth:0.9,inflation:2.5,unemployment:4.4,currentAccount:-3.3,fiscalBalance:-4.4,publicDebt:101.1,lifeExpect:80.7,gini:35.1,internet:96.0,literacy:99.0,fdi:2.1,fxReserves:1.7,remittances:0.4,carbonIntensity:0.14},
+  "France":            {gdp:3130,gdpPerCap:47580,gdpGrowth:1.1,inflation:2.3,unemployment:7.5,currentAccount:-0.7,fiscalBalance:-5.5,publicDebt:112.8,lifeExpect:82.5,gini:32.4,internet:83.8,literacy:99.0,fdi:1.9,fxReserves:1.4,remittances:0.7,carbonIntensity:0.13},
+  "Italy":             {gdp:2380,gdpPerCap:40360,gdpGrowth:0.7,inflation:1.0,unemployment:6.7,currentAccount:0.8,fiscalBalance:-3.4,publicDebt:139.0,lifeExpect:83.5,gini:33.0,internet:75.0,literacy:99.0,fdi:1.0,fxReserves:1.3,remittances:0.5,carbonIntensity:0.14},
+  "Brazil":            {gdp:2330,gdpPerCap:11110,gdpGrowth:3.2,inflation:4.4,unemployment:6.9,currentAccount:-1.9,fiscalBalance:-7.3,publicDebt:88.1,lifeExpect:74.7,gini:52.9,internet:81.3,literacy:93.2,fdi:3.5,fxReserves:14.9,remittances:0.4,carbonIntensity:0.19},
+  "Canada":            {gdp:2240,gdpPerCap:56010,gdpGrowth:1.3,inflation:2.6,unemployment:6.3,currentAccount:-2.4,fiscalBalance:-1.5,publicDebt:104.8,lifeExpect:82.2,gini:33.3,internet:93.3,literacy:99.0,fdi:3.6,fxReserves:1.8,remittances:0.5,carbonIntensity:0.32},
+  "Russia":            {gdp:2060,gdpPerCap:14390,gdpGrowth:3.6,inflation:7.9,unemployment:2.6,currentAccount:3.8,fiscalBalance:-1.7,publicDebt:18.0,lifeExpect:71.3,gini:37.5,internet:88.2,literacy:99.7,fdi:0.9,fxReserves:14.6,remittances:0.9,carbonIntensity:0.49},
+  "South Korea":       {gdp:1760,gdpPerCap:34170,gdpGrowth:2.3,inflation:2.3,unemployment:2.8,currentAccount:3.3,fiscalBalance:-1.0,publicDebt:48.8,lifeExpect:83.5,gini:31.4,internet:97.6,literacy:99.0,fdi:1.1,fxReserves:7.4,remittances:0.6,carbonIntensity:0.28},
+  "Australia":         {gdp:1795,gdpPerCap:68440,gdpGrowth:1.0,inflation:3.6,unemployment:4.1,currentAccount:-1.4,fiscalBalance:-0.8,publicDebt:55.7,lifeExpect:83.3,gini:34.3,internet:91.8,literacy:99.0,fdi:4.4,fxReserves:3.4,remittances:0.3,carbonIntensity:0.28},
+  "Spain":             {gdp:1720,gdpPerCap:35680,gdpGrowth:3.1,inflation:3.4,unemployment:11.4,currentAccount:2.8,fiscalBalance:-3.0,publicDebt:105.1,lifeExpect:83.3,gini:33.0,internet:93.2,literacy:98.4,fdi:3.5,fxReserves:1.5,remittances:0.7,carbonIntensity:0.12},
+  "Mexico":            {gdp:1790,gdpPerCap:13860,gdpGrowth:1.5,inflation:4.7,unemployment:2.9,currentAccount:-0.2,fiscalBalance:-5.7,publicDebt:52.1,lifeExpect:72.9,gini:45.4,internet:76.0,literacy:95.3,fdi:3.3,fxReserves:5.3,remittances:4.0,carbonIntensity:0.23},
+  "Indonesia":         {gdp:1370,gdpPerCap:4970,gdpGrowth:5.0,inflation:2.5,unemployment:4.8,currentAccount:-0.6,fiscalBalance:-2.7,publicDebt:39.3,lifeExpect:68.6,gini:37.9,internet:62.1,literacy:96.0,fdi:1.9,fxReserves:6.9,remittances:1.0,carbonIntensity:0.41},
+  "Netherlands":       {gdp:1140,gdpPerCap:64820,gdpGrowth:0.8,inflation:3.0,unemployment:3.7,currentAccount:8.2,fiscalBalance:-0.4,publicDebt:45.5,lifeExpect:81.8,gini:27.4,internet:95.6,literacy:99.0,fdi:11.8,fxReserves:1.1,remittances:0.9,carbonIntensity:0.15},
+  "Saudi Arabia":      {gdp:1100,gdpPerCap:30250,gdpGrowth:2.8,inflation:1.7,unemployment:3.6,currentAccount:1.6,fiscalBalance:-4.3,publicDebt:29.7,lifeExpect:76.6,gini:45.9,internet:95.7,literacy:97.6,fdi:1.4,fxReserves:28.4,remittances:1.4,carbonIntensity:0.51},
+  "Turkey":            {gdp:1120,gdpPerCap:13070,gdpGrowth:3.0,inflation:58.5,unemployment:8.9,currentAccount:-2.3,fiscalBalance:-4.9,publicDebt:31.3,lifeExpect:76.7,gini:41.9,internet:85.1,literacy:96.7,fdi:0.5,fxReserves:4.1,remittances:0.3,carbonIntensity:0.29},
+  "Switzerland":       {gdp:870,gdpPerCap:99400,gdpGrowth:1.3,inflation:1.1,unemployment:2.5,currentAccount:6.5,fiscalBalance:0.3,publicDebt:18.4,lifeExpect:83.8,gini:33.1,internet:96.8,literacy:99.0,fdi:12.9,fxReserves:10.1,remittances:0.5,carbonIntensity:0.09},
+  "Poland":            {gdp:810,gdpPerCap:21450,gdpGrowth:2.9,inflation:4.3,unemployment:3.2,currentAccount:-1.7,fiscalBalance:-5.3,publicDebt:53.5,lifeExpect:78.0,gini:27.8,internet:87.8,literacy:99.8,fdi:2.5,fxReserves:5.9,remittances:1.1,carbonIntensity:0.36},
+  "Sweden":            {gdp:600,gdpPerCap:57020,gdpGrowth:0.5,inflation:2.3,unemployment:8.5,currentAccount:5.7,fiscalBalance:-1.2,publicDebt:32.0,lifeExpect:82.9,gini:28.8,internet:97.3,literacy:99.0,fdi:4.3,fxReserves:3.1,remittances:0.5,carbonIntensity:0.09},
+  "Belgium":           {gdp:664,gdpPerCap:56430,gdpGrowth:1.0,inflation:3.7,unemployment:5.6,currentAccount:-1.5,fiscalBalance:-4.7,publicDebt:106.6,lifeExpect:81.4,gini:27.7,internet:90.8,literacy:99.0,fdi:5.2,fxReserves:1.3,remittances:1.5,carbonIntensity:0.14},
+  "Argentina":         {gdp:637,gdpPerCap:13850,gdpGrowth:-1.3,inflation:209.0,unemployment:7.0,currentAccount:-2.1,fiscalBalance:0.3,publicDebt:90.8,lifeExpect:76.1,gini:42.9,internet:78.6,literacy:99.1,fdi:1.6,fxReserves:4.7,remittances:0.1,carbonIntensity:0.22},
+  "Norway":            {gdp:590,gdpPerCap:107890,gdpGrowth:0.8,inflation:3.2,unemployment:3.8,currentAccount:23.0,fiscalBalance:17.0,publicDebt:40.0,lifeExpect:83.0,gini:26.1,internet:99.0,literacy:99.0,fdi:4.3,fxReserves:8.1,remittances:0.3,carbonIntensity:0.09},
+  "Israel":            {gdp:530,gdpPerCap:53790,gdpGrowth:1.0,inflation:2.8,unemployment:3.7,currentAccount:5.2,fiscalBalance:-8.0,publicDebt:67.5,lifeExpect:82.6,gini:38.6,internet:90.0,literacy:97.8,fdi:6.4,fxReserves:11.5,remittances:1.0,carbonIntensity:0.19},
+  "Austria":           {gdp:524,gdpPerCap:57460,gdpGrowth:-1.0,inflation:3.0,unemployment:5.3,currentAccount:2.5,fiscalBalance:-3.5,publicDebt:82.6,lifeExpect:81.5,gini:30.2,internet:88.9,literacy:99.0,fdi:2.1,fxReserves:2.5,remittances:0.6,carbonIntensity:0.13},
+  "United Arab Emirates":{gdp:520,gdpPerCap:52000,gdpGrowth:4.3,inflation:2.3,unemployment:2.7,currentAccount:8.5,fiscalBalance:3.1,publicDebt:29.7,lifeExpect:78.7,gini:32.5,internet:99.0,literacy:95.7,fdi:4.2,fxReserves:8.2,remittances:2.2,carbonIntensity:0.36},
+  "Thailand":          {gdp:500,gdpPerCap:7120,gdpGrowth:2.7,inflation:0.6,unemployment:1.1,currentAccount:1.3,fiscalBalance:-2.9,publicDebt:63.9,lifeExpect:77.2,gini:36.4,internet:85.3,literacy:94.1,fdi:2.2,fxReserves:10.6,remittances:1.4,carbonIntensity:0.36},
+  "Nigeria":           {gdp:362,gdpPerCap:1600,gdpGrowth:3.3,inflation:32.7,unemployment:4.3,currentAccount:-1.5,fiscalBalance:-4.6,publicDebt:50.2,lifeExpect:53.6,gini:35.1,internet:55.4,literacy:62.0,fdi:0.7,fxReserves:4.4,remittances:5.8,carbonIntensity:0.34},
+  "Singapore":         {gdp:501,gdpPerCap:84500,gdpGrowth:2.1,inflation:2.7,unemployment:2.0,currentAccount:17.1,fiscalBalance:1.0,publicDebt:167.4,lifeExpect:83.9,gini:45.9,internet:92.4,literacy:97.5,fdi:19.3,fxReserves:11.1,remittances:0.2,carbonIntensity:0.14},
+  "Malaysia":          {gdp:430,gdpPerCap:12590,gdpGrowth:4.4,inflation:1.8,unemployment:3.3,currentAccount:2.7,fiscalBalance:-4.3,publicDebt:64.9,lifeExpect:75.7,gini:41.1,internet:90.1,literacy:95.0,fdi:4.6,fxReserves:5.8,remittances:1.1,carbonIntensity:0.49},
+  "South Africa":      {gdp:377,gdpPerCap:6130,gdpGrowth:0.9,inflation:4.5,unemployment:32.9,currentAccount:-1.5,fiscalBalance:-4.9,publicDebt:73.7,lifeExpect:64.9,gini:63.0,internet:72.0,literacy:87.0,fdi:0.7,fxReserves:5.6,remittances:0.3,carbonIntensity:0.70},
+  "Denmark":           {gdp:420,gdpPerCap:71310,gdpGrowth:2.3,inflation:1.9,unemployment:5.0,currentAccount:13.5,fiscalBalance:2.0,publicDebt:29.3,lifeExpect:81.2,gini:29.7,internet:98.4,literacy:99.0,fdi:6.4,fxReserves:2.8,remittances:0.3,carbonIntensity:0.11},
+  "Philippines":       {gdp:440,gdpPerCap:3820,gdpGrowth:5.5,inflation:3.3,unemployment:4.1,currentAccount:-2.9,fiscalBalance:-5.7,publicDebt:60.4,lifeExpect:71.5,gini:42.3,internet:73.1,literacy:96.3,fdi:2.7,fxReserves:7.8,remittances:9.4,carbonIntensity:0.22},
+  "Bangladesh":        {gdp:450,gdpPerCap:2660,gdpGrowth:4.2,inflation:9.7,unemployment:5.1,currentAccount:-0.3,fiscalBalance:-3.9,publicDebt:39.5,lifeExpect:73.0,gini:33.4,internet:43.7,literacy:74.7,fdi:0.7,fxReserves:3.8,remittances:5.4,carbonIntensity:0.27},
+  "Egypt":             {gdp:347,gdpPerCap:3100,gdpGrowth:2.4,inflation:33.2,unemployment:7.0,currentAccount:-5.7,fiscalBalance:-7.0,publicDebt:95.1,lifeExpect:70.2,gini:31.5,internet:71.9,literacy:73.1,fdi:2.3,fxReserves:3.9,remittances:7.6,carbonIntensity:0.41},
+  "Vietnam":           {gdp:468,gdpPerCap:4740,gdpGrowth:6.8,inflation:4.2,unemployment:2.2,currentAccount:3.0,fiscalBalance:-2.5,publicDebt:34.0,lifeExpect:74.7,gini:35.7,internet:79.1,literacy:95.8,fdi:5.5,fxReserves:4.1,remittances:4.5,carbonIntensity:0.54},
+  "Iran":              {gdp:308,gdpPerCap:3430,gdpGrowth:4.3,inflation:35.0,unemployment:9.0,currentAccount:1.2,fiscalBalance:-3.0,publicDebt:31.2,lifeExpect:74.4,gini:40.9,internet:79.0,literacy:88.7,fdi:0.4,fxReserves:3.1,remittances:0.2,carbonIntensity:0.88},
+  "Pakistan":          {gdp:374,gdpPerCap:1590,gdpGrowth:2.4,inflation:23.4,unemployment:6.3,currentAccount:-0.2,fiscalBalance:-7.4,publicDebt:75.1,lifeExpect:67.2,gini:29.6,internet:36.0,literacy:58.0,fdi:0.6,fxReserves:2.2,remittances:8.8,carbonIntensity:0.37},
+  "Colombia":          {gdp:363,gdpPerCap:6990,gdpGrowth:1.6,inflation:7.2,unemployment:10.2,currentAccount:-2.7,fiscalBalance:-4.2,publicDebt:57.9,lifeExpect:73.4,gini:54.8,internet:73.4,literacy:95.4,fdi:4.8,fxReserves:8.5,remittances:2.8,carbonIntensity:0.15},
+  "Romania":           {gdp:360,gdpPerCap:18810,gdpGrowth:1.2,inflation:5.5,unemployment:5.4,currentAccount:-7.3,fiscalBalance:-7.9,publicDebt:52.2,lifeExpect:76.0,gini:34.8,internet:88.0,literacy:98.8,fdi:3.0,fxReserves:6.3,remittances:3.0,carbonIntensity:0.28},
+  "Czech Republic":    {gdp:340,gdpPerCap:31510,gdpGrowth:1.1,inflation:2.6,unemployment:2.7,currentAccount:0.6,fiscalBalance:-2.8,publicDebt:44.9,lifeExpect:78.9,gini:25.3,internet:84.3,literacy:99.0,fdi:4.0,fxReserves:8.1,remittances:1.3,carbonIntensity:0.28},
+  "Chile":             {gdp:335,gdpPerCap:17230,gdpGrowth:2.5,inflation:4.4,unemployment:8.3,currentAccount:-3.5,fiscalBalance:-1.9,publicDebt:40.8,lifeExpect:80.6,gini:44.9,internet:88.1,literacy:96.4,fdi:7.3,fxReserves:8.0,remittances:0.2,carbonIntensity:0.18},
+  "Finland":           {gdp:304,gdpPerCap:54810,gdpGrowth:-0.1,inflation:1.5,unemployment:7.7,currentAccount:0.6,fiscalBalance:-2.6,publicDebt:76.7,lifeExpect:81.9,gini:27.6,internet:95.1,literacy:99.0,fdi:2.5,fxReserves:2.0,remittances:0.3,carbonIntensity:0.12},
+  "Iraq":              {gdp:270,gdpPerCap:6130,gdpGrowth:0.1,inflation:4.1,unemployment:14.4,currentAccount:5.1,fiscalBalance:-6.0,publicDebt:51.7,lifeExpect:72.5,gini:29.5,internet:75.3,literacy:85.7,fdi:2.0,fxReserves:10.5,remittances:0.5,carbonIntensity:0.62},
+  "Portugal":          {gdp:290,gdpPerCap:27750,gdpGrowth:1.7,inflation:2.4,unemployment:6.5,currentAccount:3.9,fiscalBalance:0.4,publicDebt:98.7,lifeExpect:81.4,gini:33.5,internet:82.7,literacy:96.2,fdi:4.1,fxReserves:1.9,remittances:2.6,carbonIntensity:0.12},
+  "Peru":              {gdp:268,gdpPerCap:7720,gdpGrowth:2.9,inflation:2.7,unemployment:6.7,currentAccount:-1.0,fiscalBalance:-3.5,publicDebt:34.8,lifeExpect:73.7,gini:40.3,internet:64.3,literacy:94.5,fdi:3.2,fxReserves:14.0,remittances:1.5,carbonIntensity:0.17},
+  "New Zealand":       {gdp:255,gdpPerCap:48210,gdpGrowth:-0.5,inflation:3.3,unemployment:4.6,currentAccount:-6.6,fiscalBalance:-2.7,publicDebt:47.8,lifeExpect:82.5,gini:33.9,internet:93.1,literacy:99.0,fdi:3.8,fxReserves:4.4,remittances:0.4,carbonIntensity:0.14},
+  "Greece":            {gdp:254,gdpPerCap:24290,gdpGrowth:2.2,inflation:3.1,unemployment:10.3,currentAccount:-6.3,fiscalBalance:0.7,publicDebt:159.1,lifeExpect:82.3,gini:31.4,internet:80.0,literacy:97.9,fdi:2.0,fxReserves:1.4,remittances:1.7,carbonIntensity:0.17},
+  "Kazakhstan":        {gdp:260,gdpPerCap:12730,gdpGrowth:4.7,inflation:8.6,unemployment:4.9,currentAccount:-5.0,fiscalBalance:-2.5,publicDebt:25.8,lifeExpect:70.9,gini:27.8,internet:91.3,literacy:99.8,fdi:5.2,fxReserves:4.9,remittances:0.6,carbonIntensity:0.74},
+  "Hungary":           {gdp:230,gdpPerCap:23660,gdpGrowth:0.7,inflation:3.7,unemployment:4.3,currentAccount:0.8,fiscalBalance:-4.7,publicDebt:73.5,lifeExpect:76.3,gini:29.9,internet:89.0,literacy:99.4,fdi:4.0,fxReserves:4.4,remittances:2.5,carbonIntensity:0.25},
+  "Algeria":           {gdp:269,gdpPerCap:5810,gdpGrowth:3.7,inflation:7.5,unemployment:11.5,currentAccount:0.9,fiscalBalance:-3.8,publicDebt:55.4,lifeExpect:77.8,gini:27.6,internet:71.7,literacy:81.4,fdi:0.7,fxReserves:18.3,remittances:0.6,carbonIntensity:0.61},
+  "Qatar":             {gdp:220,gdpPerCap:83550,gdpGrowth:2.0,inflation:1.1,unemployment:0.1,currentAccount:8.7,fiscalBalance:3.6,publicDebt:47.2,lifeExpect:80.2,gini:41.1,internet:99.6,literacy:93.5,fdi:1.4,fxReserves:10.1,remittances:1.3,carbonIntensity:0.38},
+  "Ethiopia":          {gdp:163,gdpPerCap:1220,gdpGrowth:7.8,inflation:25.7,unemployment:3.5,currentAccount:-5.8,fiscalBalance:-3.5,publicDebt:53.6,lifeExpect:67.4,gini:35.0,internet:24.4,literacy:51.8,fdi:3.9,fxReserves:1.7,remittances:0.5,carbonIntensity:0.23},
+  "Slovakia":          {gdp:135,gdpPerCap:24810,gdpGrowth:2.4,inflation:2.8,unemployment:5.4,currentAccount:-2.9,fiscalBalance:-5.4,publicDebt:59.1,lifeExpect:77.5,gini:24.3,internet:90.4,literacy:99.6,fdi:3.0,fxReserves:3.7,remittances:2.1,carbonIntensity:0.26},
+  "Kuwait":            {gdp:163,gdpPerCap:37570,gdpGrowth:-3.3,inflation:2.9,unemployment:2.0,currentAccount:22.0,fiscalBalance:3.7,publicDebt:3.9,lifeExpect:75.2,gini:29.5,internet:99.4,literacy:96.1,fdi:0.3,fxReserves:15.3,remittances:2.4,carbonIntensity:0.40},
+  "Ukraine":           {gdp:185,gdpPerCap:5400,gdpGrowth:3.7,inflation:9.0,unemployment:13.7,currentAccount:-4.0,fiscalBalance:-16.0,publicDebt:91.9,lifeExpect:70.0,gini:25.6,internet:79.0,literacy:99.8,fdi:2.1,fxReserves:4.1,remittances:8.1,carbonIntensity:0.22},
+  "Kenya":             {gdp:118,gdpPerCap:2200,gdpGrowth:5.0,inflation:5.1,unemployment:5.7,currentAccount:-4.7,fiscalBalance:-5.8,publicDebt:72.6,lifeExpect:66.7,gini:38.7,internet:40.8,literacy:82.6,fdi:0.9,fxReserves:4.1,remittances:3.9,carbonIntensity:0.17},
+  "Morocco":           {gdp:148,gdpPerCap:3870,gdpGrowth:3.2,inflation:1.3,unemployment:13.5,currentAccount:-1.3,fiscalBalance:-4.4,publicDebt:71.1,lifeExpect:74.6,gini:39.5,internet:88.1,literacy:73.8,fdi:2.5,fxReserves:6.8,remittances:9.7,carbonIntensity:0.36},
+  "Ecuador":           {gdp:125,gdpPerCap:6800,gdpGrowth:-0.4,inflation:2.3,unemployment:3.5,currentAccount:0.5,fiscalBalance:-2.5,publicDebt:59.3,lifeExpect:74.8,gini:45.5,internet:76.3,literacy:94.5,fdi:1.0,fxReserves:4.6,remittances:4.5,carbonIntensity:0.16},
+  "Dominican Republic":{gdp:127,gdpPerCap:11490,gdpGrowth:5.1,inflation:3.7,unemployment:5.5,currentAccount:-1.7,fiscalBalance:-3.5,publicDebt:58.1,lifeExpect:73.7,gini:39.6,internet:82.3,literacy:93.8,fdi:3.6,fxReserves:3.3,remittances:9.0,carbonIntensity:0.20},
+  "Ghana":             {gdp:73,gdpPerCap:2190,gdpGrowth:5.7,inflation:23.2,unemployment:3.5,currentAccount:-3.4,fiscalBalance:-7.0,publicDebt:81.7,lifeExpect:63.8,gini:43.5,internet:57.6,literacy:79.0,fdi:2.4,fxReserves:2.9,remittances:6.8,carbonIntensity:0.24},
+  "Tanzania":          {gdp:80,gdpPerCap:1240,gdpGrowth:5.4,inflation:4.1,unemployment:2.6,currentAccount:-3.8,fiscalBalance:-3.4,publicDebt:45.1,lifeExpect:67.9,gini:37.8,internet:45.0,literacy:81.8,fdi:2.0,fxReserves:5.6,remittances:0.5,carbonIntensity:0.28},
+  "Guatemala":         {gdp:102,gdpPerCap:5730,gdpGrowth:3.7,inflation:4.5,unemployment:2.5,currentAccount:0.3,fiscalBalance:-2.1,publicDebt:27.5,lifeExpect:74.3,gini:48.3,internet:60.0,literacy:83.3,fdi:1.5,fxReserves:4.3,remittances:19.4,carbonIntensity:0.17},
+  "Oman":              {gdp:113,gdpPerCap:22380,gdpGrowth:2.1,inflation:0.8,unemployment:1.5,currentAccount:4.1,fiscalBalance:-3.6,publicDebt:40.0,lifeExpect:72.5,gini:30.0,internet:95.0,literacy:95.7,fdi:3.0,fxReserves:9.6,remittances:1.1,carbonIntensity:0.40},
+  "Luxembourg":        {gdp:88,gdpPerCap:136700,gdpGrowth:1.2,inflation:2.0,unemployment:5.3,currentAccount:5.0,fiscalBalance:-1.1,publicDebt:24.7,lifeExpect:82.4,gini:34.9,internet:99.1,literacy:99.0,fdi:51.2,fxReserves:1.0,remittances:2.8,carbonIntensity:0.11},
+  "Myanmar":           {gdp:65,gdpPerCap:1170,gdpGrowth:-1.0,inflation:20.0,unemployment:2.5,currentAccount:-0.5,fiscalBalance:-4.0,publicDebt:58.4,lifeExpect:65.1,gini:30.7,internet:39.4,literacy:89.0,fdi:2.2,fxReserves:3.8,remittances:1.2,carbonIntensity:0.33},
+  "Costa Rica":        {gdp:83,gdpPerCap:16020,gdpGrowth:4.0,inflation:0.9,unemployment:7.4,currentAccount:-3.1,fiscalBalance:-2.8,publicDebt:63.3,lifeExpect:80.6,gini:48.6,internet:83.3,literacy:97.9,fdi:6.2,fxReserves:5.6,remittances:1.3,carbonIntensity:0.06},
+  "Panama":            {gdp:82,gdpPerCap:18840,gdpGrowth:-1.3,inflation:1.4,unemployment:8.9,currentAccount:-4.0,fiscalBalance:-3.2,publicDebt:60.2,lifeExpect:78.3,gini:49.8,internet:63.2,literacy:95.4,fdi:7.4,fxReserves:2.0,remittances:1.3,carbonIntensity:0.12},
+  "Bulgaria":          {gdp:100,gdpPerCap:14690,gdpGrowth:2.0,inflation:3.2,unemployment:4.2,currentAccount:0.0,fiscalBalance:-2.4,publicDebt:22.5,lifeExpect:74.5,gini:39.1,internet:84.8,literacy:98.4,fdi:2.1,fxReserves:8.0,remittances:2.9,carbonIntensity:0.30},
+  "Serbia":            {gdp:73,gdpPerCap:10740,gdpGrowth:3.7,inflation:5.2,unemployment:9.1,currentAccount:-2.5,fiscalBalance:-2.2,publicDebt:48.2,lifeExpect:75.0,gini:34.5,internet:82.0,literacy:98.8,fdi:7.0,fxReserves:6.2,remittances:8.3,carbonIntensity:0.43},
+  "Croatia":           {gdp:83,gdpPerCap:20720,gdpGrowth:3.5,inflation:4.1,unemployment:5.5,currentAccount:1.6,fiscalBalance:-2.7,publicDebt:63.6,lifeExpect:78.5,gini:29.7,internet:82.7,literacy:99.3,fdi:4.5,fxReserves:5.4,remittances:4.6,carbonIntensity:0.18},
+  "Libya":             {gdp:47,gdpPerCap:7200,gdpGrowth:6.0,inflation:2.5,unemployment:19.0,currentAccount:10.0,fiscalBalance:-3.0,publicDebt:1.5,lifeExpect:72.9,gini:36.0,internet:47.1,literacy:91.0,fdi:1.5,fxReserves:11.0,remittances:0.2,carbonIntensity:0.55},
+  "Belarus":           {gdp:76,gdpPerCap:8150,gdpGrowth:4.0,inflation:5.9,unemployment:3.9,currentAccount:0.2,fiscalBalance:-1.5,publicDebt:42.0,lifeExpect:73.2,gini:24.4,internet:87.3,literacy:99.8,fdi:1.0,fxReserves:2.4,remittances:2.4,carbonIntensity:0.37},
+  "Uzbekistan":        {gdp:103,gdpPerCap:2870,gdpGrowth:6.5,inflation:10.0,unemployment:9.1,currentAccount:-7.5,fiscalBalance:-4.5,publicDebt:38.5,lifeExpect:74.4,gini:27.7,internet:77.6,literacy:99.9,fdi:3.7,fxReserves:11.5,remittances:16.2,carbonIntensity:0.62},
+  "Sri Lanka":         {gdp:90,gdpPerCap:4130,gdpGrowth:5.0,inflation:4.6,unemployment:5.2,currentAccount:-2.3,fiscalBalance:-7.0,publicDebt:115.1,lifeExpect:76.8,gini:39.8,internet:52.0,literacy:92.3,fdi:1.4,fxReserves:2.6,remittances:8.9,carbonIntensity:0.18},
+  "Uruguay":           {gdp:78,gdpPerCap:22400,gdpGrowth:3.0,inflation:5.2,unemployment:8.0,currentAccount:-2.7,fiscalBalance:-3.3,publicDebt:67.9,lifeExpect:77.8,gini:40.6,internet:88.1,literacy:98.8,fdi:4.8,fxReserves:11.3,remittances:0.4,carbonIntensity:0.13},
+  "Azerbaijan":        {gdp:74,gdpPerCap:7290,gdpGrowth:4.1,inflation:2.4,unemployment:5.4,currentAccount:12.0,fiscalBalance:0.7,publicDebt:18.9,lifeExpect:73.8,gini:26.6,internet:84.0,literacy:99.8,fdi:6.5,fxReserves:8.5,remittances:3.1,carbonIntensity:0.46},
+  "Bolivia":           {gdp:43,gdpPerCap:3530,gdpGrowth:0.7,inflation:6.2,unemployment:4.6,currentAccount:-3.5,fiscalBalance:-9.6,publicDebt:77.5,lifeExpect:72.1,gini:41.6,internet:52.3,literacy:92.5,fdi:0.6,fxReserves:3.2,remittances:4.3,carbonIntensity:0.28},
+  "Cameroon":          {gdp:49,gdpPerCap:1720,gdpGrowth:4.0,inflation:5.8,unemployment:3.5,currentAccount:-3.0,fiscalBalance:-2.0,publicDebt:44.0,lifeExpect:60.5,gini:46.6,internet:35.7,literacy:77.1,fdi:1.7,fxReserves:2.9,remittances:1.5,carbonIntensity:0.22},
+  "Ivory Coast":       {gdp:78,gdpPerCap:2790,gdpGrowth:6.5,inflation:4.2,unemployment:2.6,currentAccount:-3.8,fiscalBalance:-4.6,publicDebt:58.5,lifeExpect:59.0,gini:37.2,internet:46.8,literacy:53.1,fdi:3.3,fxReserves:4.9,remittances:1.7,carbonIntensity:0.24},
+  "Jordan":            {gdp:52,gdpPerCap:4780,gdpGrowth:2.7,inflation:1.8,unemployment:21.5,currentAccount:-6.3,fiscalBalance:-3.6,publicDebt:92.0,lifeExpect:74.8,gini:33.7,internet:89.5,literacy:98.0,fdi:3.7,fxReserves:8.4,remittances:10.7,carbonIntensity:0.31},
+  "Lithuania":         {gdp:80,gdpPerCap:29060,gdpGrowth:2.5,inflation:1.0,unemployment:6.8,currentAccount:1.2,fiscalBalance:-3.0,publicDebt:38.9,lifeExpect:75.7,gini:36.7,internet:89.3,literacy:99.8,fdi:3.5,fxReserves:3.9,remittances:3.1,carbonIntensity:0.17},
+  "Uganda":            {gdp:51,gdpPerCap:1060,gdpGrowth:6.2,inflation:3.7,unemployment:2.6,currentAccount:-4.1,fiscalBalance:-5.4,publicDebt:52.8,lifeExpect:64.5,gini:42.7,internet:26.2,literacy:79.0,fdi:3.3,fxReserves:4.8,remittances:3.6,carbonIntensity:0.34},
+  "Paraguay":          {gdp:46,gdpPerCap:6320,gdpGrowth:3.8,inflation:3.3,unemployment:5.8,currentAccount:0.7,fiscalBalance:-3.0,publicDebt:44.1,lifeExpect:74.3,gini:45.7,internet:78.4,literacy:94.2,fdi:1.4,fxReserves:5.5,remittances:2.3,carbonIntensity:0.19},
+  "Sudan":             {gdp:35,gdpPerCap:700,gdpGrowth:-20.0,inflation:200.0,unemployment:14.0,currentAccount:-5.0,fiscalBalance:-3.0,publicDebt:260.0,lifeExpect:65.0,gini:34.2,internet:30.9,literacy:60.7,fdi:0.6,fxReserves:1.2,remittances:3.4,carbonIntensity:0.22},
+  "Latvia":            {gdp:48,gdpPerCap:26020,gdpGrowth:0.5,inflation:0.8,unemployment:6.7,currentAccount:2.4,fiscalBalance:-2.3,publicDebt:43.5,lifeExpect:74.9,gini:35.2,internet:89.7,literacy:99.9,fdi:2.9,fxReserves:4.1,remittances:3.3,carbonIntensity:0.16},
+  "Tunisia":           {gdp:47,gdpPerCap:3830,gdpGrowth:1.6,inflation:7.3,unemployment:16.2,currentAccount:-3.0,fiscalBalance:-7.0,publicDebt:83.7,lifeExpect:76.4,gini:32.8,internet:67.0,literacy:82.3,fdi:2.0,fxReserves:3.4,remittances:5.6,carbonIntensity:0.35},
+  "Bahrain":           {gdp:47,gdpPerCap:30230,gdpGrowth:2.6,inflation:1.0,unemployment:1.2,currentAccount:6.0,fiscalBalance:-2.9,publicDebt:117.0,lifeExpect:78.2,gini:30.0,internet:99.7,literacy:97.3,fdi:6.6,fxReserves:2.7,remittances:1.4,carbonIntensity:0.47},
+  "El Salvador":       {gdp:35,gdpPerCap:5370,gdpGrowth:3.5,inflation:0.9,unemployment:3.0,currentAccount:-3.4,fiscalBalance:-4.0,publicDebt:83.2,lifeExpect:72.9,gini:38.8,internet:57.0,literacy:89.1,fdi:1.6,fxReserves:3.7,remittances:24.1,carbonIntensity:0.17},
+  "Honduras":          {gdp:36,gdpPerCap:3550,gdpGrowth:3.2,inflation:5.0,unemployment:5.7,currentAccount:-4.2,fiscalBalance:-2.9,publicDebt:54.5,lifeExpect:74.8,gini:52.1,internet:39.0,literacy:89.4,fdi:6.0,fxReserves:4.5,remittances:27.3,carbonIntensity:0.22},
+  "Cyprus":            {gdp:32,gdpPerCap:36200,gdpGrowth:3.0,inflation:2.3,unemployment:5.6,currentAccount:-8.3,fiscalBalance:3.0,publicDebt:75.6,lifeExpect:81.1,gini:32.7,internet:90.6,literacy:98.7,fdi:58.0,fxReserves:1.1,remittances:1.1,carbonIntensity:0.20},
+  "Zambia":            {gdp:28,gdpPerCap:1480,gdpGrowth:2.6,inflation:13.3,unemployment:12.5,currentAccount:1.1,fiscalBalance:-4.3,publicDebt:124.6,lifeExpect:63.5,gini:57.1,internet:27.3,literacy:86.8,fdi:3.5,fxReserves:2.5,remittances:0.8,carbonIntensity:0.21},
+  "Senegal":           {gdp:32,gdpPerCap:1810,gdpGrowth:8.8,inflation:2.0,unemployment:3.3,currentAccount:-10.5,fiscalBalance:-7.0,publicDebt:100.6,lifeExpect:68.7,gini:38.1,internet:46.0,literacy:51.9,fdi:5.5,fxReserves:5.6,remittances:10.7,carbonIntensity:0.28},
+  "Slovenia":          {gdp:65,gdpPerCap:30890,gdpGrowth:1.7,inflation:2.5,unemployment:3.6,currentAccount:2.9,fiscalBalance:-2.7,publicDebt:67.6,lifeExpect:81.3,gini:24.4,internet:89.8,literacy:99.7,fdi:2.4,fxReserves:3.7,remittances:1.6,carbonIntensity:0.16},
+  "Zimbabwe":          {gdp:24,gdpPerCap:1580,gdpGrowth:3.0,inflation:560.0,unemployment:26.5,currentAccount:-2.5,fiscalBalance:-3.0,publicDebt:100.0,lifeExpect:59.8,gini:50.3,internet:35.3,literacy:88.7,fdi:1.0,fxReserves:1.3,remittances:14.3,carbonIntensity:0.24},
+  "Nepal":             {gdp:43,gdpPerCap:1370,gdpGrowth:4.2,inflation:4.5,unemployment:11.4,currentAccount:-4.1,fiscalBalance:-3.5,publicDebt:45.4,lifeExpect:71.0,gini:32.8,internet:44.0,literacy:67.9,fdi:0.5,fxReserves:10.4,remittances:26.2,carbonIntensity:0.22},
+  "Cambodia":          {gdp:32,gdpPerCap:1870,gdpGrowth:5.8,inflation:2.0,unemployment:1.8,currentAccount:-24.0,fiscalBalance:-4.5,publicDebt:35.5,lifeExpect:70.8,gini:37.9,internet:55.0,literacy:80.5,fdi:14.0,fxReserves:7.3,remittances:5.3,carbonIntensity:0.26},
+  "Bosnia":            {gdp:26,gdpPerCap:7700,gdpGrowth:3.0,inflation:3.0,unemployment:12.8,currentAccount:-2.7,fiscalBalance:0.5,publicDebt:28.0,lifeExpect:77.4,gini:33.0,internet:78.6,literacy:98.5,fdi:3.8,fxReserves:6.6,remittances:11.4,carbonIntensity:0.38},
+};
+
+// ── Apply hardcoded data onto DATASET ──
+function applyLiveData(){
+  DATASET.forEach(d=>{
+    const live=LIVE[d.name];
+    if(!live) return;
+    const set=(f,v,r=1)=>{ if(v!=null && isFinite(v)){ d[f]=Math.round(v*Math.pow(10,r))/Math.pow(10,r); }};
+    set('gdp',           live.gdp,           1);
+    set('gdpPerCap',     live.gdpPerCap,     0);
+    set('gdpGrowth',     live.gdpGrowth,     1);
+    set('inflation',     live.inflation,     1);
+    set('unemployment',  live.unemployment,  1);
+    set('currentAccount',live.currentAccount,1);
+    set('fiscalBalance', live.fiscalBalance, 1);
+    set('publicDebt',    live.publicDebt,    1);
+    set('lifeExpect',    live.lifeExpect,    1);
+    set('gini',          live.gini,          1);
+    set('internet',      live.internet,      1);
+    set('literacy',      live.literacy,      1);
+    set('fdi',           live.fdi,           2);
+    set('fxReserves',    live.fxReserves,    1);
+    set('remittances',   live.remittances,   2);
+    set('carbonIntensity',live.carbonIntensity,2);
+  });
+  _cache={};
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+function init(){
+  DATASET=buildDataset();
+  populatePicker();
+
+  // Apply hardcoded live data immediately (no network needed)
+  applyLiveData();
+
+  const covered=Object.keys(LIVE).length;
+  const pip=document.getElementById('data-pip');
+  if(pip) pip.innerHTML=`<div class="live-dot" style="background:#3fb950"></div>IMF WEO 2024 + World Bank · ${covered}/100 countries`;
+
+  const ov=document.getElementById('data-overlay');
+  if(ov) ov.style.display='none';
+  render();
+}
+
+function populatePicker(){
+  const pk=document.getElementById('cpicker');
+  COUNTRIES.forEach((n,i)=>{
+    const o=document.createElement('option');
+    o.value=i; o.textContent=`${FLAGS[n]||''} ${n}`;
+    pk.appendChild(o);
+  });
+  pk.value=activeCIdx;
+}
+
+init();
+</script>
+</body>
+</html>
