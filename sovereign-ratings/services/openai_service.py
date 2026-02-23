@@ -102,6 +102,12 @@ PILLAR SCORING (0 = worst, 100 = best):
 
 COMPOSITE WEIGHT: Economic 25% + Fiscal 25% + External 20% + Monetary 10% + Banking 10% + Political 10%
 
+DATA RECENCY RULES:
+- Always use the most recent data available — prioritise 2025 estimates and 2024 actuals
+- Where 2025 data is not yet available, use 2024 data and note it as such
+- Do not cite data older than 2023 unless no more recent figures exist
+- When referencing statistics always include the year, e.g. "GDP growth of 4.2% in 2024"
+
 SCORING RULES:
 - Assign pillar scores based solely on your analysis of this specific country
 - Do NOT use the same scores for different countries — each country must be scored on its own merits
