@@ -209,7 +209,7 @@ async def country_page(request: Request, iso2: str):
                r.score_economic, r.score_fiscal, r.score_external,
                r.score_monetary, r.score_banking, r.score_political,
                r.ai_rationale, r.override_rationale, r.pillar_analysis,
-               r.created_at as rated_at
+               r.default_history, r.created_at as rated_at
         FROM countries c
         LEFT JOIN ratings r ON r.country_id = c.id AND r.is_current = 1
         WHERE c.iso2=?

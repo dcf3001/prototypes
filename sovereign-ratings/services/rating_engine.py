@@ -88,14 +88,15 @@ async def run_ai_rating(iso2: str) -> dict:
         (country["id"],)
     )
     pillar_analysis_json = json.dumps(ai_result.get("pillar_analysis", {}))
+    default_history = ai_result.get("default_history", "")
 
     cursor = db.execute("""
         INSERT INTO ratings
             (country_id, rating, outlook,
              score_economic, score_fiscal, score_external,
              score_monetary, score_banking, score_political,
-             composite_score, ai_rationale, pillar_analysis, source)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'ai')
+             composite_score, ai_rationale, pillar_analysis, default_history, source)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'ai')
     """, (
         country["id"], rating, outlook,
         pillar_scores.get("economic_strength"),
@@ -104,7 +105,7 @@ async def run_ai_rating(iso2: str) -> dict:
         pillar_scores.get("monetary_policy"),
         pillar_scores.get("banking_sector"),
         pillar_scores.get("political_governance"),
-        composite, rationale, pillar_analysis_json,
+        composite, rationale, pillar_analysis_json, default_history,
     ))
     db.commit()
 

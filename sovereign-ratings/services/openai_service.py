@@ -136,6 +136,7 @@ DO NOT copy the placeholder values below — every score must reflect your actua
     "political_governance": <integer 0-100 based on your analysis>
   }},
   "rationale": "2-3 sentence overall summary explaining the assigned rating and outlook.",
+  "default_history": "A thorough narrative of the country's sovereign default history. If the country has never defaulted, write exactly: 'No history of sovereign default.' Otherwise write 3-6 paragraphs covering each default episode: the date, the amount and instruments involved, the economic and political causes, the resolution process (restructuring, IMF programme, Brady bonds, etc.), and the lasting impact on the country's creditworthiness. Separate paragraphs with \\n\\n. Use specific dates, dollar amounts and creditor names where known. For countries with multiple defaults (e.g. Argentina, Ecuador, Greece) cover each episode separately.",
   "pillar_analysis": {{
     "economic_strength": {{
       "summary": "REQUIRED: at least 450 words of flowing analytical prose about this country's economic strength, with specific statistics. NO paragraph labels. Paragraphs separated by \\n\\n.",

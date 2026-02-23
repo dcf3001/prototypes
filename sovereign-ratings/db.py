@@ -96,6 +96,7 @@ def _create_schema(conn):
     # Migrations — safe to run on every startup
     for sql in [
         "ALTER TABLE ratings ADD COLUMN pillar_analysis TEXT",
+        "ALTER TABLE ratings ADD COLUMN default_history TEXT",
     ]:
         try:
             conn.execute(sql)

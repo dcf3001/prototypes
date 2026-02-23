@@ -81,6 +81,7 @@
   <button class="tab-btn" onclick="switchTab('monetary',this)">Monetary</button>
   <button class="tab-btn" onclick="switchTab('banking',this)">Banking</button>
   <button class="tab-btn" onclick="switchTab('politics',this)">Politics</button>
+  <button class="tab-btn" onclick="switchTab('defaults',this)">Default History</button>
   <button class="tab-btn" onclick="switchTab('history',this)">History</button>
   <button class="tab-btn" onclick="switchTab('news',this)">News</button>
 </div>
@@ -255,6 +256,34 @@
   [],
   'political_governance'
 ) }}
+
+
+<!-- ═══ DEFAULT HISTORY TAB ══════════════════════════════════════════════════ -->
+<div id="tab-defaults" class="tab-panel card" style="border-top:none;border-radius:0 0 2px 2px">
+  <h3 style="font-size:0.55rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:18px">Sovereign Default History</h3>
+  {% if country.default_history %}
+    {% set dh = country.default_history %}
+    {% if dh == 'No history of sovereign default.' %}
+      <div style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:2px">
+        <span style="font-size:1.2rem">✓</span>
+        <span style="font-size:0.8rem;font-weight:600;color:var(--green)">No history of sovereign default.</span>
+      </div>
+    {% else %}
+      <div style="background:var(--amber-bg);border:1px solid var(--amber-bdr);border-radius:2px;padding:18px">
+        <div style="font-size:0.55rem;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:14px">Default Episodes</div>
+        {% for para in dh.split('\n\n') %}
+          {% if para.strip() %}
+            <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:14px;font-family:'Libre Franklin',sans-serif">{{ para.strip() }}</p>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="empty" style="border:1px solid var(--border);border-radius:2px">
+      No default history recorded yet — click <strong>Re-rate with AI</strong> to generate.
+    </div>
+  {% endif %}
+</div>
 
 
 <!-- ═══ HISTORY TAB ═══════════════════════════════════════════════════════════ -->
