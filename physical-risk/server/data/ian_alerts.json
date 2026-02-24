@@ -1,0 +1,256 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "id": "ian-001",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-82.42, 26.32], [-82.10, 26.32], [-81.80, 26.48],
+          [-81.62, 26.72], [-81.62, 27.05], [-81.92, 27.20],
+          [-82.25, 27.18], [-82.52, 27.00], [-82.58, 26.70],
+          [-82.52, 26.46], [-82.42, 26.32]
+        ]]
+      },
+      "properties": {
+        "event": "Hurricane Warning",
+        "severity": "Extreme",
+        "urgency": "Immediate",
+        "certainty": "Observed",
+        "areaDesc": "Lee; Charlotte",
+        "geocode": { "SAME": ["012071", "012015"] },
+        "headline": "HURRICANE WARNING — Catastrophic Category 4 landfall near Fort Myers",
+        "description": "Hurricane Ian is making landfall near Fort Myers with maximum sustained winds of 150 mph. This is an EXTREMELY DANGEROUS situation. Catastrophic storm surge of 12–18 ft above ground level expected along the immediate coast. EVACUATE NOW if you have not already done so.",
+        "sent": "2022-09-28T15:05:00-04:00",
+        "effective": "2022-09-28T15:05:00-04:00",
+        "onset": "2022-09-28T15:05:00-04:00",
+        "expires": "2022-09-29T06:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-002",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Hurricane Warning",
+        "severity": "Extreme",
+        "urgency": "Immediate",
+        "certainty": "Likely",
+        "areaDesc": "Collier; Sarasota; Manatee; DeSoto; Hardee; Glades; Hendry; Highlands",
+        "geocode": { "SAME": ["012021", "012115", "012081", "012027", "012049", "012043", "012051", "012055"] },
+        "headline": "Hurricane Warning in effect for SW and Central Florida",
+        "description": "HURRICANE WARNING IN EFFECT. Hurricane Ian is forecast to produce catastrophic winds, storm surge, and inland flooding across SW and Central Florida counties.",
+        "sent": "2022-09-28T00:00:00-04:00",
+        "effective": "2022-09-28T00:00:00-04:00",
+        "onset": "2022-09-28T00:00:00-04:00",
+        "expires": "2022-09-29T06:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-003",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-82.65, 26.85], [-82.35, 26.75], [-82.05, 26.88],
+          [-81.85, 27.08], [-81.88, 27.38], [-82.18, 27.50],
+          [-82.52, 27.42], [-82.72, 27.22], [-82.68, 26.98],
+          [-82.65, 26.85]
+        ]]
+      },
+      "properties": {
+        "event": "Storm Surge Warning",
+        "severity": "Extreme",
+        "urgency": "Immediate",
+        "certainty": "Likely",
+        "areaDesc": "Charlotte Harbor and Pine Island Sound",
+        "geocode": { "SAME": ["012015", "012071"] },
+        "headline": "Life-threatening Storm Surge Warning — 10–15 ft inundation",
+        "description": "STORM SURGE WARNING. Life-threatening inundation of 10–15 ft above ground level is expected along Charlotte Harbor, Pine Island Sound, and the mouth of the Caloosahatchee River.",
+        "sent": "2022-09-28T06:00:00-04:00",
+        "effective": "2022-09-28T06:00:00-04:00",
+        "onset": "2022-09-28T12:00:00-04:00",
+        "expires": "2022-09-29T06:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-004",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Storm Surge Warning",
+        "severity": "Extreme",
+        "urgency": "Immediate",
+        "certainty": "Likely",
+        "areaDesc": "Collier; Sarasota; Manatee; Pinellas; Hillsborough",
+        "geocode": { "SAME": ["012021", "012115", "012081", "012103", "012057"] },
+        "headline": "Storm Surge Warning — 5–10 ft above ground level for Gulf coast",
+        "description": "STORM SURGE WARNING. Life-threatening inundation of 5–10 ft above ground level expected along the Gulf coast of Collier through Pinellas counties.",
+        "sent": "2022-09-28T00:00:00-04:00",
+        "effective": "2022-09-28T00:00:00-04:00",
+        "onset": "2022-09-28T06:00:00-04:00",
+        "expires": "2022-09-29T00:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-005",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Tornado Watch",
+        "severity": "Severe",
+        "urgency": "Urgent",
+        "certainty": "Possible",
+        "areaDesc": "Broward; Miami-Dade; Palm Beach; Martin; St. Lucie; Indian River; Okeechobee; Highlands",
+        "geocode": { "SAME": ["012011", "012086", "012099", "012085", "012111", "012061", "012093", "012055"] },
+        "headline": "Tornado Watch 550 in effect until 8 PM EDT for South Florida",
+        "description": "TORNADO WATCH. Conditions are highly favorable for tornado development across South and Central Florida as outer bands of Hurricane Ian rotate onshore.",
+        "sent": "2022-09-28T12:00:00-04:00",
+        "effective": "2022-09-28T12:00:00-04:00",
+        "onset": "2022-09-28T12:00:00-04:00",
+        "expires": "2022-09-28T20:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-006",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-80.22, 26.58], [-80.15, 26.58], [-80.10, 26.72],
+          [-80.12, 26.85], [-80.22, 26.90], [-80.32, 26.82],
+          [-80.35, 26.68], [-80.28, 26.58], [-80.22, 26.58]
+        ]]
+      },
+      "properties": {
+        "event": "Tornado Warning",
+        "severity": "Extreme",
+        "urgency": "Immediate",
+        "certainty": "Observed",
+        "areaDesc": "Palm Beach — Boca Raton area",
+        "geocode": { "SAME": ["012099"] },
+        "headline": "TORNADO WARNING — Confirmed tornado near Boca Raton",
+        "description": "At 3:29 PM EDT, a confirmed tornado was located near Boca Raton, moving north at 30 mph. TAKE COVER NOW.",
+        "sent": "2022-09-28T15:29:00-04:00",
+        "effective": "2022-09-28T15:29:00-04:00",
+        "onset": "2022-09-28T15:29:00-04:00",
+        "expires": "2022-09-28T15:45:00-04:00"
+      }
+    },
+    {
+      "id": "ian-007",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Flash Flood Warning",
+        "severity": "Severe",
+        "urgency": "Immediate",
+        "certainty": "Observed",
+        "areaDesc": "Orange; Osceola; Seminole; Polk; Lake; Volusia; Brevard",
+        "geocode": { "SAME": ["012095", "012097", "012117", "012105", "012069", "012127", "012009"] },
+        "headline": "Flash Flood Warning for Central Florida — 6–10 inches already fallen",
+        "description": "At 2:45 PM EDT, Hurricane Ian continues to produce torrential rainfall across Central Florida. 6–10 inches of rain have fallen with another 3–5 inches expected. TURN AROUND, DON'T DROWN.",
+        "sent": "2022-09-28T14:45:00-04:00",
+        "effective": "2022-09-28T14:45:00-04:00",
+        "onset": "2022-09-28T14:45:00-04:00",
+        "expires": "2022-09-28T22:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-008",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Tropical Storm Warning",
+        "severity": "Moderate",
+        "urgency": "Urgent",
+        "certainty": "Likely",
+        "areaDesc": "Hillsborough; Pinellas; Pasco; Hernando; Citrus; Sumter; Marion; Alachua; Levy; Gilchrist",
+        "geocode": { "SAME": ["012057", "012103", "012101", "012053", "012017", "012119", "012083", "012001", "012075", "012041"] },
+        "headline": "Tropical Storm Warning — Sustained tropical storm conditions imminent",
+        "description": "TROPICAL STORM WARNING. Tropical storm conditions are expected within 12 hours across Gulf Coast counties north of the Hurricane Warning area.",
+        "sent": "2022-09-28T00:00:00-04:00",
+        "effective": "2022-09-28T00:00:00-04:00",
+        "onset": "2022-09-28T00:00:00-04:00",
+        "expires": "2022-09-29T00:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-009",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Coastal Flood Warning",
+        "severity": "Severe",
+        "urgency": "Urgent",
+        "certainty": "Likely",
+        "areaDesc": "Volusia; Flagler; St. Johns; Brevard coastal",
+        "geocode": { "SAME": ["012127", "012035", "012109", "012009"] },
+        "headline": "Coastal Flood Warning — 3–5 ft inundation along Atlantic coast",
+        "description": "COASTAL FLOOD WARNING. Dangerous coastal flooding is expected along the Atlantic coast of Florida due to offshore flow and large breaking waves from Hurricane Ian.",
+        "sent": "2022-09-28T06:00:00-04:00",
+        "effective": "2022-09-28T06:00:00-04:00",
+        "onset": "2022-09-28T12:00:00-04:00",
+        "expires": "2022-09-29T00:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-010",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "High Wind Warning",
+        "severity": "Severe",
+        "urgency": "Urgent",
+        "certainty": "Likely",
+        "areaDesc": "Duval; Clay; St. Johns; Nassau; Baker; Columbia; Union; Bradford",
+        "geocode": { "SAME": ["012031", "012019", "012109", "012089", "012003", "012023", "012125", "012007"] },
+        "headline": "High Wind Warning — Sustained winds 40–50 mph, gusts to 65 mph",
+        "description": "HIGH WIND WARNING. Sustained winds of 40 to 50 mph with gusts up to 65 mph expected across NE Florida as the remnants of Ian move rapidly inland.",
+        "sent": "2022-09-28T15:00:00-04:00",
+        "effective": "2022-09-28T15:00:00-04:00",
+        "onset": "2022-09-28T18:00:00-04:00",
+        "expires": "2022-09-29T06:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-011",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Flood Watch",
+        "severity": "Moderate",
+        "urgency": "Expected",
+        "certainty": "Possible",
+        "areaDesc": "Chatham; Bryan; Bulloch; Effingham; Screven; Jenkins; Burke; Candler; Emanuel; Toombs; Tattnall; Evans",
+        "geocode": { "SAME": ["013051", "013029", "013031", "013103", "013261", "013165", "013033", "013043", "013107", "013277", "013267", "013109"] },
+        "headline": "Flood Watch through Thursday for SE Georgia — Ian remnants bring 4–8 inches",
+        "description": "FLOOD WATCH. The remnants of Hurricane Ian are expected to produce 4–8 inches of rainfall with isolated amounts up to 12 inches across SE Georgia, leading to dangerous flooding.",
+        "sent": "2022-09-28T18:00:00-04:00",
+        "effective": "2022-09-28T18:00:00-04:00",
+        "onset": "2022-09-29T06:00:00-04:00",
+        "expires": "2022-09-30T00:00:00-04:00"
+      }
+    },
+    {
+      "id": "ian-012",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "event": "Flood Watch",
+        "severity": "Moderate",
+        "urgency": "Expected",
+        "certainty": "Possible",
+        "areaDesc": "Horry; Brunswick; New Hanover; Pender; Onslow; Beaufort SC; Jasper; Hampton; Colleton; Dorchester; Berkeley; Charleston",
+        "geocode": { "SAME": ["045051", "045009", "045053", "045029", "045043", "045015", "045021", "045035", "045019"] },
+        "headline": "Flood Watch for Low Country SC — Ian remnants bring heavy rainfall",
+        "description": "FLOOD WATCH. Ian's remnants will produce 3–5 inches of rainfall with locally higher amounts possible across the Low Country of South Carolina.",
+        "sent": "2022-09-29T06:00:00-04:00",
+        "effective": "2022-09-29T06:00:00-04:00",
+        "onset": "2022-09-29T12:00:00-04:00",
+        "expires": "2022-09-30T06:00:00-04:00"
+      }
+    }
+  ]
+}
