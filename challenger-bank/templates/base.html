@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Challenger Bank{% endblock %} — Risk Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2333;
+      --border:    #30363d;
+      --text:      #c9d1d9;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --green:     #3fb950;
+      --amber:     #d29922;
+      --red:       #f85149;
+      --purple:    #bc8cff;
+      --teal:      #39d353;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      margin-right: 32px;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      list-style: none;
+      height: 100%;
+    }
+    .nav-tabs a {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 14px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .nav-tabs a:hover { color: var(--text); }
+    .nav-tabs a.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .nav-right {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* ── Page chrome ─────────────────────────────────────────── */
+    .page-header {
+      padding: 20px 24px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .page-header .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      padding-bottom: 16px;
+    }
+    main { padding: 0 24px 40px; }
+
+    /* ── KPI cards ───────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .kpi-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .kpi-row.cols-5 { grid-template-columns: repeat(5, 1fr); }
+    .kpi-row.cols-6 { grid-template-columns: repeat(6, 1fr); }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .kpi.accent .kpi-value { color: var(--accent); }
+    .kpi.green  .kpi-value { color: var(--green); }
+    .kpi.amber  .kpi-value { color: var(--amber); }
+    .kpi.red    .kpi-value { color: var(--red); }
+
+    /* ── Charts ──────────────────────────────────────────────── */
+    .charts-row {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .charts-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .charts-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .charts-row.cols-12 { grid-template-columns: 1fr 2fr; }
+    .charts-row.cols-21 { grid-template-columns: 2fr 1fr; }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .chart-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .chart-card h3 .sub {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 11px;
+      margin-left: 6px;
+    }
+    .chart-wrap { position: relative; }
+
+    /* ── Tables ──────────────────────────────────────────────── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .table-card-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .table-card-header h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      letter-spacing: 0.4px;
+      padding: 8px 12px;
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+    thead th.num { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    td { padding: 8px 12px; color: var(--text); white-space: nowrap; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.muted { color: var(--muted); }
+
+    /* ── Badges / pills ──────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .badge-aaa { background: #1a3a2a; color: #3fb950; }
+    .badge-aa  { background: #1a3a2a; color: #3fb950; }
+    .badge-a   { background: #1c2e40; color: #58a6ff; }
+    .badge-bbb { background: #2d2a1a; color: #d29922; }
+    .badge-bb  { background: #3a1f1a; color: #f0883e; }
+    .badge-b   { background: #3a1a1a; color: #f85149; }
+    .badge-ccc { background: #2d0f0f; color: #ff7b72; }
+    .badge-green  { background: #1a3a2a; color: #3fb950; }
+    .badge-amber  { background: #2d2a1a; color: #d29922; }
+    .badge-red    { background: #3a1a1a; color: #f85149; }
+    .badge-blue   { background: #1c2e40; color: #58a6ff; }
+    .badge-purple { background: #2a1a3a; color: #bc8cff; }
+
+    /* ── Filters ─────────────────────────────────────────────── */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .filter-row select, .filter-row input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    .filter-row select:focus, .filter-row input:focus {
+      border-color: var(--accent);
+    }
+    .filter-label { font-size: 11px; color: var(--muted); }
+
+    /* ── Links ───────────────────────────────────────────────── */
+    a.row-link { color: var(--accent); text-decoration: none; }
+    a.row-link:hover { text-decoration: underline; }
+
+    /* ── Alerts ──────────────────────────────────────────────── */
+    .alert-strip {
+      background: #2d1a1a;
+      border: 1px solid #5a2020;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #f85149;
+      margin-bottom: 16px;
+    }
+    .alert-strip.amber {
+      background: #2d2a1a;
+      border-color: #5a4a10;
+      color: #d29922;
+    }
+
+    /* ── Utilities ───────────────────────────────────────────── */
+    .text-green  { color: var(--green); }
+    .text-amber  { color: var(--amber); }
+    .text-red    { color: var(--red); }
+    .text-accent { color: var(--accent); }
+    .text-muted  { color: var(--muted); }
+    .text-right  { text-align: right; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .align-center { align-items: center; }
+
+    /* Chart.js default font */
+    * { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/dashboard">⬡ CHALLENGER BANK</a>
+  <ul class="nav-tabs">
+    <li><a href="/dashboard"     class="{% if active=='dashboard'     %}active{% endif %}">Dashboard</a></li>
+    <li><a href="/credit"        class="{% if active=='credit'        %}active{% endif %}">Credit Risk</a></li>
+    <li><a href="/market"        class="{% if active=='market'        %}active{% endif %}">Market Risk</a></li>
+    <li><a href="/counterparty"  class="{% if active=='counterparty'  %}active{% endif %}">Counterparty Risk</a></li>
+    <li><a href="/country"       class="{% if active=='country'       %}active{% endif %}">Country Risk</a></li>
+    <li><a href="/scenarios"     class="{% if active=='scenarios'     %}active{% endif %}">Scenarios</a></li>
+  </ul>
+  <span class="nav-right">As of 31 Dec 2025 &nbsp;|&nbsp; Synthetic Data</span>
+</nav>
+
+{% block body %}{% endblock %}
+
+<script>
+// ── Global Chart.js defaults ──────────────────────────────────────
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+Chart.defaults.font.size = 11;
+
+// ── Colour palette ────────────────────────────────────────────────
+const COLORS = {
+  blue:   '#58a6ff', green:  '#3fb950', amber:  '#d29922',
+  red:    '#f85149', purple: '#bc8cff', teal:   '#39d353',
+  orange: '#f0883e', pink:   '#ff7b72', cyan:   '#79c0ff',
+  white:  '#c9d1d9',
+};
+const PALETTE = Object.values(COLORS);
+
+function makeChart(id, cfg) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return new Chart(ctx, cfg);
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

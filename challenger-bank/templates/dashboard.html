@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Risk Dashboard</h1>
+  <p class="subtitle">Bank-wide exposure summary across all risk types — Challenger Bank N.A.</p>
+</div>
+<main>
+
+  <!-- KPI row -->
+  <div class="kpi-row cols-6">
+    <div class="kpi accent">
+      <div class="kpi-label">Total RWA</div>
+      <div class="kpi-value">${{ "%.1f"|format(s.credit_rwa_usd_bn + s.saccr_rwa_usd_bn) }}B</div>
+      <div class="kpi-sub">Credit + CCR Risk-Weighted Assets</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Portfolio VaR (1d 99%)</div>
+      <div class="kpi-value">${{ "%.0f"|format(s.market_var_1d_99_usd_m) }}M</div>
+      <div class="kpi-sub">All desks, USD millions</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Total CVA</div>
+      <div class="kpi-value">${{ "%.1f"|format(s.total_cva_usd_m|abs) }}M</div>
+      <div class="kpi-sub">Credit Valuation Adjustment</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Lending EAD</div>
+      <div class="kpi-value">${{ "%.1f"|format(s.total_drawn_lending_usd_bn) }}B</div>
+      <div class="kpi-sub">{{ s.active_facilities }} active facilities</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Expected Loss</div>
+      <div class="kpi-value">${{ "%.0f"|format(s.total_expected_loss_usd_bn * 1000) }}M</div>
+      <div class="kpi-sub">Credit EL (annualised)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Counterparties</div>
+      <div class="kpi-value">{{ s.counterparty_count }}</div>
+      <div class="kpi-sub">{{ s.live_trades }} live trades</div>
+    </div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="charts-row cols-3" style="margin-bottom:24px;">
+    <div class="chart-card">
+      <h3>VaR by Desk <span class="sub">USD millions, 1d 99%</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cVarDesk"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Credit EAD by Sector <span class="sub">USD billions</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cSector"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Rating Distribution <span class="sub">active facilities, by EAD</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cRating"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stress scenario bar -->
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>Scenario Stressed P&L <span class="sub">portfolio total, USD millions</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cScenario"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Country Limit Utilisation <span class="sub">% of approved limit</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cCountry"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent credit events -->
+  {% if events %}
+  <div class="table-card mb-24">
+    <div class="table-card-header">
+      <h3>Recent Credit Events</h3>
+      <span class="badge badge-red">{{ events|length }} events</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Counterparty</th>
+            <th>Rating</th>
+            <th>Event Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+          <tr>
+            <td class="muted">{{ e.event_date }}</td>
+            <td><a class="row-link" href="/counterparty/{{ e.counterparty_id }}">{{ e.counterparty_name }}</a></td>
+            <td><span class="badge {{ e.internal_rating|rating_badge }}">{{ e.internal_rating }}</span></td>
+            <td>
+              {% if e.event_type == 'Default' %}
+                <span class="text-red">{{ e.event_type }}</span>
+              {% elif e.event_type == 'Covenant Breach' %}
+                <span class="text-amber">{{ e.event_type }}</span>
+              {% else %}
+                {{ e.event_type }}
+              {% endif %}
+            </td>
+            <td class="muted" style="max-width:350px;overflow:hidden;text-overflow:ellipsis;">{{ e.description }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Top counterparties table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Top Counterparties by Credit EAD</h3>
+      <a href="/credit" style="font-size:11px;color:var(--accent);text-decoration:none;">View all →</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Counterparty</th>
+            <th>Country</th>
+            <th>Sector</th>
+            <th>Rating</th>
+            <th class="num">EAD (USD M)</th>
+            <th class="num">EL (USD M)</th>
+            <th class="num">RWA (USD M)</th>
+            <th class="num">PD</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in top_facilities %}
+          <tr>
+            <td><a class="row-link" href="/counterparty/{{ f.counterparty_id }}">{{ f.counterparty_name }}</a></td>
+            <td class="muted">{{ f.country_iso2 }}</td>
+            <td class="muted">{{ f.sector }}</td>
+            <td><span class="badge {{ f.internal_rating|rating_badge }}">{{ f.internal_rating }}</span></td>
+            <td class="num">{{ (f.ead * 1000)|round(1) }}</td>
+            <td class="num">{{ (f.expected_loss * 1000)|round(2) }}</td>
+            <td class="num">{{ (f.rwa * 1000)|round(1) }}</td>
+            <td class="num text-muted">{{ "%.3f%%"|format(f.pd * 100) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// VaR by desk
+const varLabels = {{ var_desks | tojson }};
+const varValues = {{ var_values | tojson }};
+makeChart('cVarDesk', {
+  type: 'bar',
+  data: {
+    labels: varLabels,
+    datasets: [{ data: varValues, backgroundColor: COLORS.red + 'cc', borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    }
+  }
+});
+
+// Sector EAD
+const sectorLabels = {{ sector_labels | tojson }};
+const sectorValues = {{ sector_values | tojson }};
+makeChart('cSector', {
+  type: 'bar',
+  data: {
+    labels: sectorLabels,
+    datasets: [{ data: sectorValues, backgroundColor: COLORS.blue + 'cc', borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'B' } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Rating donut
+const ratingLabels = {{ rating_labels | tojson }};
+const ratingValues = {{ rating_values | tojson }};
+const ratingColors = ratingLabels.map(r => {
+  if (['AAA','AA+','AA','AA-'].includes(r)) return COLORS.green;
+  if (['A+','A','A-'].includes(r))          return COLORS.teal;
+  if (r.startsWith('BBB'))                  return COLORS.blue;
+  if (r.startsWith('BB'))                   return COLORS.amber;
+  if (r.startsWith('B'))                    return COLORS.orange;
+  return COLORS.red;
+});
+makeChart('cRating', {
+  type: 'doughnut',
+  data: { labels: ratingLabels, datasets: [{ data: ratingValues, backgroundColor: ratingColors, borderWidth: 1, borderColor: '#161b22' }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.raw.toFixed(2)}B EAD` } }
+    }
+  }
+});
+
+// Scenarios
+const scLabels = {{ sc_labels | tojson }};
+const scValues = {{ sc_values | tojson }};
+makeChart('cScenario', {
+  type: 'bar',
+  data: {
+    labels: scLabels,
+    datasets: [{ data: scValues, backgroundColor: scValues.map(v => v < 0 ? COLORS.red + 'bb' : COLORS.green + 'bb'), borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 40 } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    }
+  }
+});
+
+// Country limits
+const ctryLabels = {{ country_labels | tojson }};
+const ctryUtils  = {{ country_utils | tojson }};
+makeChart('cCountry', {
+  type: 'bar',
+  data: {
+    labels: ctryLabels,
+    datasets: [{ data: ctryUtils, backgroundColor: ctryUtils.map(v => v > 85 ? COLORS.red + 'cc' : v > 60 ? COLORS.amber + 'cc' : COLORS.green + 'cc'), borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, max: 120, ticks: { callback: v => v + '%' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

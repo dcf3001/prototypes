@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Scenarios{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Stress Scenarios</h1>
+  <p class="subtitle">8 scenarios (3 historical, 5 hypothetical) — desk-level P&amp;L impacts</p>
+</div>
+<main>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>Scenario Portfolio P&amp;L Impact <span class="sub">USD millions</span></h3>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="cScOverview"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Scenario Detail — Desk Breakdown <span class="sub">select a scenario below</span></h3>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="cScDesk"></canvas>
+      </div>
+    </div>
+  </div>
+
+  {% for sc in scenarios %}
+  <div class="table-card" style="margin-bottom:20px;">
+    <div class="table-card-header" style="cursor:pointer;" onclick="toggleScenario({{ sc.id }})">
+      <h3>
+        <span class="badge badge-{% if sc.scenario_type=='Historical' %}blue{% else %}purple{% endif %}" style="margin-right:8px;">{{ sc.scenario_type }}</span>
+        {{ sc.scenario_name }}
+        {% set portfolio_pnl = sc_pnl.get(sc.id, 0) %}
+        <span style="margin-left:16px;font-size:12px;font-weight:400;" class="text-{% if portfolio_pnl < -100 %}red{% elif portfolio_pnl < 0 %}amber{% else %}green{% endif %}">
+          Portfolio P&L: ${{ "%.0f"|format(portfolio_pnl) }}M
+        </span>
+      </h3>
+      <span style="font-size:11px;color:var(--muted);">{{ sc.description }}</span>
+      <span style="font-size:11px;color:var(--accent);margin-left:auto;">▼</span>
+    </div>
+    <div id="sc-{{ sc.id }}" style="display:none;">
+      <!-- Shocks grid -->
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">USD Rates</div>
+          <div class="{% if sc.usd_rates_shock_bps > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.usd_rates_shock_bps) }} bps</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">GBP Rates</div>
+          <div class="{% if sc.gbp_rates_shock_bps > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.gbp_rates_shock_bps) }} bps</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">US Equity</div>
+          <div class="{% if sc.us_equity_shock_pct < 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.us_equity_shock_pct) }}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">IG Spreads</div>
+          <div class="{% if sc.ig_spread_shock_bps > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.ig_spread_shock_bps) }} bps</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">HY Spreads</div>
+          <div class="{% if sc.hy_spread_shock_bps > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.hy_spread_shock_bps) }} bps</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">USD/BRL</div>
+          <div class="{% if sc.usdbrl_shock_pct > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.usdbrl_shock_pct) }}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">USD/ZAR</div>
+          <div class="{% if sc.usdzar_shock_pct > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.usdzar_shock_pct) }}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">USD/CNY</div>
+          <div class="{% if sc.usdcny_shock_pct > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.usdcny_shock_pct) }}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">CN Equity</div>
+          <div class="{% if sc.cn_equity_shock_pct < 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.cn_equity_shock_pct) }}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">BRL Rates</div>
+          <div class="{% if sc.brl_rates_shock_bps > 0 %}text-red{% else %}text-green{% endif %}" style="font-weight:600;">{{ "%+.0f"|format(sc.brl_rates_shock_bps) }} bps</div>
+        </div>
+      </div>
+      <!-- Desk results -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Desk</th>
+              <th class="num">P&amp;L Impact (USD M)</th>
+              <th>VaR Breach</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in sc_results.get(sc.id, []) %}
+            {% if r.desk %}
+            <tr>
+              <td>{{ r.desk }}</td>
+              <td class="num {% if r.pnl_impact_usd < -20 %}text-red{% elif r.pnl_impact_usd < 0 %}text-amber{% else %}text-green{% endif %}">${{ "%.0f"|format(r.pnl_impact_usd) }}</td>
+              <td>{% if r.var_breached %}<span class="text-red">Yes</span>{% else %}<span class="text-muted">No</span>{% endif %}</td>
+              <td class="muted" style="font-size:11px;">{{ r.notes or '—' }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scNames   = {{ sc_names | tojson }};
+const scPortPnl = {{ sc_port_pnl | tojson }};
+const scDeskData= {{ sc_desk_data | tojson }};
+
+makeChart('cScOverview', {
+  type: 'bar',
+  data: {
+    labels: scNames,
+    datasets: [{ data: scPortPnl, backgroundColor: scPortPnl.map(v => v < 0 ? COLORS.red + 'bb' : COLORS.green + 'bb'), borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 40 } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    },
+    onClick(e, els) {
+      if (els.length) updateDeskChart(els[0].index);
+    }
+  }
+});
+
+let deskChart = makeChart('cScDesk', {
+  type: 'bar',
+  data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderRadius: 4 }] },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+function updateDeskChart(i) {
+  const d = scDeskData[i];
+  deskChart.data.labels = d.desks;
+  deskChart.data.datasets[0].data = d.pnl;
+  deskChart.data.datasets[0].backgroundColor = d.pnl.map(v => v < 0 ? COLORS.red + 'bb' : COLORS.green + 'bb');
+  deskChart.update();
+}
+// Init with first scenario
+if (scDeskData.length) updateDeskChart(0);
+
+function toggleScenario(id) {
+  const el = document.getElementById('sc-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

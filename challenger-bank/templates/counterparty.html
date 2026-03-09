@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Counterparty Risk{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Counterparty Credit Risk</h1>
+  <p class="subtitle">CVA, PFE profiles, netting sets and SA-CCR capital — 45 trading counterparties</p>
+</div>
+<main>
+
+  <div class="kpi-row cols-4">
+    <div class="kpi amber">
+      <div class="kpi-label">Total CVA</div>
+      <div class="kpi-value">${{ "%.1f"|format(totals.total_cva|abs) }}M</div>
+      <div class="kpi-sub">Credit Valuation Adjustment</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">SA-CCR RWA</div>
+      <div class="kpi-value">${{ "%.2f"|format(totals.saccr_rwa) }}B</div>
+      <div class="kpi-sub">Standardised Approach RWA</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Gross Positive MtM</div>
+      <div class="kpi-value">${{ "%.0f"|format(totals.gross_pos_mtm) }}M</div>
+      <div class="kpi-sub">Pre-netting exposure</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Current Exposure</div>
+      <div class="kpi-value">${{ "%.0f"|format(totals.net_exposure) }}M</div>
+      <div class="kpi-sub">After netting and collateral</div>
+    </div>
+  </div>
+
+  <div class="charts-row cols-12">
+    <div class="chart-card">
+      <h3>Top 15 CVA Exposures <span class="sub">USD millions (negative = cost)</span></h3>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="cCva"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>PFE Ladder <span class="sub">Expected Positive Exposure profile</span></h3>
+      <div style="margin-bottom:8px;">
+        <select id="cpSelect" onchange="updatePFE()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px;">
+          {% for cp in pfe_cps %}
+          <option value="{{ loop.index0 }}">{{ cp.name }} ({{ cp.rating }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="cPfe"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CCR summary table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>CCR Counterparty Summary</h3>
+      <div class="filter-row">
+        <input id="fSearch" type="text" placeholder="Search…" oninput="filterCCR()" style="width:160px;">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="ccrTable">
+        <thead>
+          <tr>
+            <th>Counterparty</th>
+            <th>Country</th>
+            <th>Rating</th>
+            <th>ISDA / CSA</th>
+            <th class="num">Gross+ MtM (M)</th>
+            <th class="num">Net MtM (M)</th>
+            <th class="num">Collateral (M)</th>
+            <th class="num">Current Exposure (M)</th>
+            <th class="num">CVA (M)</th>
+            <th class="num">EAD (M)</th>
+            <th class="num">SA-CCR RWA (M)</th>
+            <th class="num">PFE Peak (M)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in ccr_rows %}
+          <tr data-name="{{ r.name|lower }}">
+            <td><a class="row-link" href="/counterparty/{{ r.id }}">{{ r.name }}</a></td>
+            <td class="muted">{{ r.country_iso2 }}</td>
+            <td><span class="badge {{ r.internal_rating|rating_badge }}">{{ r.internal_rating }}</span></td>
+            <td class="muted" style="font-size:11px;">
+              {{ r.agreement_type }}{% if r.csa_in_place %} + CSA{% endif %}
+            </td>
+            <td class="num">{{ "%.1f"|format(r.gross_positive_mtm_usd) }}</td>
+            <td class="num {% if r.net_mtm_usd > 0 %}text-green{% elif r.net_mtm_usd < 0 %}text-red{% endif %}">{{ "%.1f"|format(r.net_mtm_usd) }}</td>
+            <td class="num text-muted">{{ "%.1f"|format(r.collateral_held_usd) }}</td>
+            <td class="num {% if r.current_exposure_usd > 20 %}text-red{% elif r.current_exposure_usd > 10 %}text-amber{% else %}text-muted{% endif %}">{{ "%.1f"|format(r.current_exposure_usd) }}</td>
+            <td class="num text-amber">{{ "%.2f"|format(r.cva_usd) }}</td>
+            <td class="num text-muted">{{ "%.1f"|format(r.ead_usd * 1000) }}</td>
+            <td class="num text-muted">{{ "%.1f"|format(r.rwa_usd * 1000) }}</td>
+            <td class="num text-muted">{{ "%.1f"|format(r.pfe_peak) if r.pfe_peak else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// CVA chart
+makeChart('cCva', {
+  type: 'bar',
+  data: {
+    labels: {{ cva_labels | tojson }},
+    datasets: [{ data: {{ cva_values | tojson }}, backgroundColor: COLORS.amber + 'cc', borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(1) + 'M' } },
+      y: { grid: { display: false }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// PFE data
+const pfeData = {{ pfe_data | tojson }};
+const pfeLabels = ['1M','3M','6M','1Y','2Y','3Y','5Y','7Y','10Y'];
+
+let pfeChart = makeChart('cPfe', {
+  type: 'line',
+  data: {
+    labels: pfeLabels,
+    datasets: [{
+      label: 'PFE (95th)',
+      data: pfeData[0],
+      borderColor: COLORS.purple,
+      backgroundColor: COLORS.purple + '22',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(0) + 'M' } }
+    }
+  }
+});
+
+function updatePFE() {
+  const i = document.getElementById('cpSelect').value;
+  pfeChart.data.datasets[0].data = pfeData[i];
+  pfeChart.update();
+}
+
+// CCR filter
+function filterCCR() {
+  const s = document.getElementById('fSearch').value.toLowerCase();
+  document.querySelectorAll('#ccrTable tbody tr').forEach(r => {
+    r.style.display = !s || r.dataset.name.includes(s) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

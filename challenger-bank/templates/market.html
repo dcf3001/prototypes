@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Market Risk{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Market Risk</h1>
+  <p class="subtitle">Trading book VaR, P&amp;L attribution and desk-level positions</p>
+</div>
+<main>
+
+  <div class="kpi-row cols-4">
+    <div class="kpi red">
+      <div class="kpi-label">Portfolio VaR (1d 99%)</div>
+      <div class="kpi-value">${{ "%.0f"|format(portfolio_var.var_1d_99) }}M</div>
+      <div class="kpi-sub">Diversified across all desks</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Expected Shortfall (97.5%)</div>
+      <div class="kpi-value">${{ "%.0f"|format(portfolio_var.es_1d_97_5) }}M</div>
+      <div class="kpi-sub">Average tail loss beyond VaR</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">10-day VaR (99%)</div>
+      <div class="kpi-value">${{ "%.0f"|format(portfolio_var.var_10d_99) }}M</div>
+      <div class="kpi-sub">Basel regulatory capital proxy</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Stressed VaR</div>
+      <div class="kpi-value">${{ "%.0f"|format(portfolio_var.stressed_var) }}M</div>
+      <div class="kpi-sub">≈ 2× VaR (stress period)</div>
+    </div>
+  </div>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>VaR by Desk <span class="sub">1-day 99%, USD millions</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cVarDesk"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>VaR Trend <span class="sub">portfolio, last 24 months</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cVarTrend"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>Monthly P&amp;L by Desk <span class="sub">USD millions, last 12 months cumulative</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cPnlDesk"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Portfolio P&amp;L Attribution <span class="sub">by risk factor, cumulative YTD</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cPnlFactor"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desk-level VaR table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Desk VaR Summary <span style="font-size:11px;color:var(--muted);font-weight:400;">— As of {{ latest_date }}</span></h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Desk</th>
+            <th class="num">VaR 1d 99% (M)</th>
+            <th class="num">ES 97.5% (M)</th>
+            <th class="num">VaR 10d 99% (M)</th>
+            <th class="num">Stressed VaR (M)</th>
+            <th class="num">VaR Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in desk_vars %}
+          <tr>
+            <td>{{ v.desk }}</td>
+            <td class="num">${{ "%.1f"|format(v.var_1d_99) }}</td>
+            <td class="num">${{ "%.1f"|format(v.es_1d_97_5) }}</td>
+            <td class="num">${{ "%.1f"|format(v.var_10d_99) }}</td>
+            <td class="num">${{ "%.1f"|format(v.stressed_var) }}</td>
+            <td class="num">
+              <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+                {{ "%.0f"|format(v.var_1d_99 / portfolio_var.var_1d_99 * 100) }}%
+                <div style="width:60px;height:6px;background:var(--border);border-radius:3px;">
+                  <div style="width:{{ [v.var_1d_99 / portfolio_var.var_1d_99 * 100, 100]|min|int }}%;height:100%;background:var(--red);border-radius:3px;"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Positions table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Current Positions</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Desk</th>
+            <th>Product</th>
+            <th>Currency</th>
+            <th class="num">Net Notional (USD M)</th>
+            <th class="num">Net MtM (USD M)</th>
+            <th class="num">Net DV01 (USD M/bp)</th>
+            <th class="num">Net CS01 (USD M/bp)</th>
+            <th class="num">Trades</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in positions %}
+          <tr>
+            <td>{{ p.desk }}</td>
+            <td class="muted">{{ p.product }}</td>
+            <td class="muted">{{ p.currency }}</td>
+            <td class="num {% if p.net_notional_usd > 0 %}text-green{% elif p.net_notional_usd < 0 %}text-red{% endif %}">
+              {{ "%.0f"|format(p.net_notional_usd) }}
+            </td>
+            <td class="num {% if p.net_mtm_usd > 0 %}text-green{% elif p.net_mtm_usd < 0 %}text-red{% endif %}">
+              {{ "%.2f"|format(p.net_mtm_usd) }}
+            </td>
+            <td class="num text-muted">{{ "%.4f"|format(p.net_dv01) if p.net_dv01 else '—' }}</td>
+            <td class="num text-muted">{{ "%.4f"|format(p.net_cs01) if p.net_cs01 else '—' }}</td>
+            <td class="num text-muted">{{ p.trade_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// VaR by desk
+makeChart('cVarDesk', {
+  type: 'bar',
+  data: {
+    labels: {{ desk_labels | tojson }},
+    datasets: [{ data: {{ desk_var_values | tojson }}, backgroundColor: COLORS.red + 'bb', borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// VaR trend
+makeChart('cVarTrend', {
+  type: 'line',
+  data: {
+    labels: {{ var_trend_dates | tojson }},
+    datasets: [{
+      label: 'Portfolio VaR',
+      data: {{ var_trend_values | tojson }},
+      borderColor: COLORS.red,
+      backgroundColor: COLORS.red + '22',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    }
+  }
+});
+
+// P&L by desk (stacked bar)
+const pnlDeskData = {{ pnl_desk_data | tojson }};
+makeChart('cPnlDesk', {
+  type: 'bar',
+  data: {
+    labels: pnlDeskData.dates,
+    datasets: pnlDeskData.desks.map((d, i) => ({
+      label: d,
+      data: pnlDeskData.values[i],
+      backgroundColor: PALETTE[i % PALETTE.length] + 'cc',
+      borderWidth: 0
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } } },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { maxTicksLimit: 6 } },
+      y: { stacked: true, grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    }
+  }
+});
+
+// P&L factor attribution
+const factData = {{ factor_data | tojson }};
+makeChart('cPnlFactor', {
+  type: 'bar',
+  data: {
+    labels: factData.labels,
+    datasets: [{ data: factData.values, backgroundColor: factData.values.map(v => v >= 0 ? COLORS.green + 'cc' : COLORS.red + 'cc'), borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(0) + 'M' } }
+    }
+  }
+});
+</script>
+{% endblock %}

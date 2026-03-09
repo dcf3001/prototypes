@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Country Risk{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Country Risk</h1>
+  <p class="subtitle">Cross-border exposure, sovereign limits and transfer / political risk scores</p>
+</div>
+<main>
+
+  <div class="kpi-row cols-5">
+    {% for c in kpi_countries %}
+    <div class="kpi {{ c.status|lower }}">
+      <div class="kpi-label">{{ c.country_name }}</div>
+      <div class="kpi-value">{{ "%.0f"|format(c.utilisation_pct) }}%</div>
+      <div class="kpi-sub">${{ "%.0f"|format(c.current_exposure_usd|round) }}M / ${{ "%.0f"|format(c.approved_limit_usd|round) }}M limit</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>Total Exposure by Country <span class="sub">USD millions — Lending + Trading</span></h3>
+      <div class="chart-wrap" style="height:230px;">
+        <canvas id="cExposure"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Limit Utilisation <span class="sub">% of approved country limit</span></h3>
+      <div class="chart-wrap" style="height:230px;">
+        <canvas id="cUtil"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Country limits table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Country Limit Summary</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>Sovereign Rating</th>
+            <th class="num">Approved Limit (USD M)</th>
+            <th class="num">Lending Exposure (M)</th>
+            <th class="num">Trading Exposure (M)</th>
+            <th class="num">Total Exposure (M)</th>
+            <th class="num">Utilisation</th>
+            <th>Status</th>
+            <th>Last Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in limits %}
+          <tr>
+            <td>{{ c.country_name }}</td>
+            <td><span class="badge {{ c.sovereign_rating|rating_badge }}">{{ c.sovereign_rating }}</span></td>
+            <td class="num text-muted">{{ "%.0f"|format(c.approved_limit_usd) }}</td>
+            <td class="num">{{ "%.0f"|format(c.lending_exp) }}</td>
+            <td class="num">{{ "%.0f"|format(c.trading_exp) }}</td>
+            <td class="num">{{ "%.0f"|format(c.current_exposure_usd) }}</td>
+            <td class="num">
+              <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+                <span class="text-{% if c.utilisation_pct > 85 %}red{% elif c.utilisation_pct > 60 %}amber{% else %}green{% endif %}">{{ "%.1f"|format(c.utilisation_pct) }}%</span>
+                <div style="width:70px;height:6px;background:var(--border);border-radius:3px;">
+                  <div style="width:{{ [c.utilisation_pct, 100]|min|int }}%;height:100%;background:{% if c.utilisation_pct > 85 %}var(--red){% elif c.utilisation_pct > 60 %}var(--amber){% else %}var(--green){% endif %};border-radius:3px;"></div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-{% if c.limit_status == 'Green' %}green{% elif c.limit_status == 'Amber' %}amber{% else %}red{% endif %}">{{ c.limit_status }}</span>
+            </td>
+            <td class="muted">{{ c.last_review_date }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Transfer risk table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Transfer &amp; Political Risk</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th class="num">Transfer Risk Score <span class="text-muted">(0-10)</span></th>
+            <th>Convertibility Risk</th>
+            <th class="num">Political Risk Score <span class="text-muted">(0-10)</span></th>
+            <th>Capital Controls</th>
+            <th>Overall Assessment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transfer %}
+          <tr>
+            <td>{{ t.country_name }}</td>
+            <td class="num">
+              <span class="text-{% if t.transfer_risk_score > 6 %}red{% elif t.transfer_risk_score > 3 %}amber{% else %}green{% endif %}">{{ t.transfer_risk_score }}</span>
+            </td>
+            <td>
+              <span class="badge badge-{% if t.convertibility_risk == 'Low' %}green{% elif t.convertibility_risk == 'Medium' %}amber{% else %}red{% endif %}">{{ t.convertibility_risk }}</span>
+            </td>
+            <td class="num">
+              <span class="text-{% if t.political_risk_score > 6 %}red{% elif t.political_risk_score > 3 %}amber{% else %}green{% endif %}">{{ t.political_risk_score }}</span>
+            </td>
+            <td class="text-{% if t.capital_controls %}amber{% else %}muted{% endif %}">
+              {% if t.capital_controls %}Yes{% else %}None{% endif %}
+            </td>
+            <td>
+              {% set score = (t.transfer_risk_score + t.political_risk_score) / 2 %}
+              {% if score > 6 %}<span class="text-red">High Risk</span>
+              {% elif score > 3 %}<span class="text-amber">Moderate Risk</span>
+              {% else %}<span class="text-green">Low Risk</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Counterparty exposure by country -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Counterparties by Country</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Counterparty</th>
+            <th>Country</th>
+            <th>Sector</th>
+            <th>Rating</th>
+            <th class="num">Lending EAD (USD M)</th>
+            <th class="num">Live Trades Notional (USD M)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cp in cp_exposures %}
+          <tr>
+            <td><a class="row-link" href="/counterparty/{{ cp.id }}">{{ cp.name }}</a></td>
+            <td class="muted">{{ cp.country_iso2 }}</td>
+            <td class="muted">{{ cp.sector }}</td>
+            <td><span class="badge {{ cp.internal_rating|rating_badge }}">{{ cp.internal_rating }}</span></td>
+            <td class="num">{{ "%.1f"|format(cp.lending_ead_m) }}</td>
+            <td class="num text-muted">{{ "%.0f"|format(cp.trade_notional_m) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Exposure bar
+makeChart('cExposure', {
+  type: 'bar',
+  data: {
+    labels: {{ ctry_labels | tojson }},
+    datasets: [
+      { label: 'Lending', data: {{ ctry_lending | tojson }}, backgroundColor: COLORS.blue + 'cc', borderRadius: 0 },
+      { label: 'Trading', data: {{ ctry_trading | tojson }}, backgroundColor: COLORS.purple + 'cc', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 11 } } } },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: '#30363d' }, ticks: { callback: v => '$' + v + 'M' } }
+    }
+  }
+});
+
+// Utilisation
+const utils = {{ ctry_utils | tojson }};
+makeChart('cUtil', {
+  type: 'bar',
+  data: {
+    labels: {{ ctry_labels | tojson }},
+    datasets: [{
+      data: utils,
+      backgroundColor: utils.map(v => v > 85 ? COLORS.red + 'cc' : v > 60 ? COLORS.amber + 'cc' : COLORS.green + 'cc'),
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, max: 120, ticks: { callback: v => v + '%' } }
+    }
+  }
+});
+</script>
+{% endblock %}

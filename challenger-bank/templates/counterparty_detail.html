@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block title %}{{ cp.name }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:16px;padding-bottom:12px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <h1 style="font-size:18px;">{{ cp.name }}</h1>
+        <span class="badge {{ cp.internal_rating|rating_badge }}" style="font-size:12px;padding:3px 8px;">{{ cp.internal_rating }}</span>
+        <span class="badge badge-{% if cp.rating_outlook=='Negative' %}amber{% elif cp.rating_outlook=='Positive' %}green{% else %}blue{% endif %}" style="font-size:11px;">{{ cp.rating_outlook }}</span>
+        {% if cp.is_soe %}<span class="badge badge-purple">SOE</span>{% endif %}
+        {% if cp.is_financial_institution %}<span class="badge badge-blue">Financial Institution</span>{% endif %}
+      </div>
+      <p class="subtitle" style="padding-bottom:0;">
+        {{ cp.sector }} / {{ cp.sub_sector }} &nbsp;·&nbsp;
+        {{ cp.hq_city }}, {{ cp.country_name }} ({{ cp.country_iso2 }}) &nbsp;·&nbsp;
+        {{ cp.currency }} functional &nbsp;·&nbsp;
+        Founded {{ cp.founded_year }} &nbsp;·&nbsp;
+        {{ "{:,}".format(cp.employee_count) }} employees
+      </p>
+      <p style="font-size:11px;color:var(--muted);margin-top:4px;">LEI: {{ cp.lei }}</p>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <a href="/credit" style="font-size:11px;color:var(--accent);text-decoration:none;">← Back to Credit Risk</a>
+    </div>
+  </div>
+</div>
+<main>
+
+  <!-- AI Summary -->
+  {% if cp.ai_summary %}
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted);line-height:1.6;">
+    {{ cp.ai_summary }}
+    {% if cp.risk_tags %}
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+      {% for tag in cp.risk_tags %}
+      <span style="background:var(--border);border-radius:3px;padding:1px 7px;font-size:10px;color:var(--muted);">#{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="kpi-row cols-5">
+    <div class="kpi">
+      <div class="kpi-label">Latest Revenue</div>
+      <div class="kpi-value">{{ "%.1f"|format(latest_fin.revenue) if latest_fin.revenue else '—' }}</div>
+      <div class="kpi-sub">Bn {{ cp.currency }}, FY{{ latest_fin.fiscal_year }}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">EBITDA Margin</div>
+      <div class="kpi-value">{{ "%.1f"|format(latest_fin.ebitda_margin * 100) if latest_fin.ebitda_margin else '—' }}%</div>
+      <div class="kpi-sub">FY{{ latest_fin.fiscal_year }}</div>
+    </div>
+    <div class="kpi {% if latest_fin.net_debt_ebitda and latest_fin.net_debt_ebitda > 5 %}red{% elif latest_fin.net_debt_ebitda and latest_fin.net_debt_ebitda > 3 %}amber{% endif %}">
+      <div class="kpi-label">Net Debt / EBITDA</div>
+      <div class="kpi-value">{{ "%.1f"|format(latest_fin.net_debt_ebitda) if latest_fin.net_debt_ebitda else '—' }}×</div>
+      <div class="kpi-sub">FY{{ latest_fin.fiscal_year }}</div>
+    </div>
+    <div class="kpi {% if latest_pd > 0.05 %}red{% elif latest_pd > 0.01 %}amber{% endif %}">
+      <div class="kpi-label">1-Year PD</div>
+      <div class="kpi-value">{{ "%.3f"|format(latest_pd * 100) }}%</div>
+      <div class="kpi-sub">Implied from rating model</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">CVA (latest)</div>
+      <div class="kpi-value">${{ "%.2f"|format(latest_cva.cva_usd|abs) if latest_cva else '—' }}M</div>
+      <div class="kpi-sub">Credit Valuation Adjustment</div>
+    </div>
+  </div>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>Revenue &amp; EBITDA <span class="sub">Bn {{ cp.currency }}, 5-year trend</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cFinancials"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>PD Trend <span class="sub">1-year probability of default</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cPd"></canvas>
+      </div>
+    </div>
+  </div>
+
+  {% if pfe_profile %}
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>PFE Profile <span class="sub">Potential Future Exposure, USD millions</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cPfe"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Leverage Trend <span class="sub">Net Debt / EBITDA × by year</span></h3>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="cLeverage"></canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Financials table -->
+  <div class="table-card">
+    <div class="table-card-header"><h3>Financial Summary ({{ cp.currency }}bn)</h3></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th class="num">Revenue</th>
+            <th class="num">EBITDA</th>
+            <th class="num">Margin</th>
+            <th class="num">Net Income</th>
+            <th class="num">Total Debt</th>
+            <th class="num">Net Debt</th>
+            <th class="num">ND/EBITDA</th>
+            <th class="num">Int Coverage</th>
+            <th class="num">FCF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in financials %}
+          <tr>
+            <td class="muted">FY{{ f.fiscal_year }}</td>
+            <td class="num">{{ "%.2f"|format(f.revenue) }}</td>
+            <td class="num">{{ "%.2f"|format(f.ebitda) }}</td>
+            <td class="num text-{% if f.ebitda_margin > 0.25 %}green{% elif f.ebitda_margin > 0.10 %}muted{% else %}amber{% endif %}">{{ "%.1f"|format(f.ebitda_margin * 100) }}%</td>
+            <td class="num {% if f.net_income < 0 %}text-red{% endif %}">{{ "%.2f"|format(f.net_income) }}</td>
+            <td class="num text-muted">{{ "%.2f"|format(f.total_debt) }}</td>
+            <td class="num">{{ "%.2f"|format(f.net_debt) }}</td>
+            <td class="num {% if f.net_debt_ebitda > 5 %}text-red{% elif f.net_debt_ebitda > 3.5 %}text-amber{% else %}text-muted{% endif %}">{{ "%.1f"|format(f.net_debt_ebitda) }}×</td>
+            <td class="num {% if f.interest_coverage < 2 %}text-red{% elif f.interest_coverage < 3.5 %}text-amber{% else %}text-muted{% endif %}">{{ "%.1f"|format(f.interest_coverage) }}×</td>
+            <td class="num {% if f.fcf < 0 %}text-red{% else %}text-muted{% endif %}">{{ "%.2f"|format(f.fcf) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rating history -->
+  <div class="table-card">
+    <div class="table-card-header"><h3>Rating History</h3></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Rating</th><th>Outlook</th><th>Type</th><th>Analyst Notes</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rating_history %}
+          <tr>
+            <td class="muted">{{ r.rating_date }}</td>
+            <td><span class="badge {{ r.rating|rating_badge }}">{{ r.rating }}</span></td>
+            <td class="{% if r.outlook == 'Negative' %}text-amber{% elif r.outlook == 'Positive' %}text-green{% else %}text-muted{% endif %}">{{ r.outlook }}</td>
+            <td class="muted">{{ r.rating_type }}</td>
+            <td class="muted" style="font-size:11px;">{{ r.analyst_notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Facilities -->
+  {% if facilities %}
+  <div class="table-card">
+    <div class="table-card-header"><h3>Credit Facilities</h3></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Facility</th>
+            <th>Type</th>
+            <th class="num">Limit</th>
+            <th class="num">Drawn</th>
+            <th>Seniority</th>
+            <th class="num">Spread (bps)</th>
+            <th>Maturity</th>
+            <th class="num">PD</th>
+            <th class="num">EAD (USD M)</th>
+            <th class="num">EL (USD M)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in facilities %}
+          <tr>
+            <td>{{ f.facility_name }}</td>
+            <td class="muted">{{ f.facility_type }}</td>
+            <td class="num">{{ f.limit_amount }} {{ f.currency }}</td>
+            <td class="num">{{ f.drawn_amount }} {{ f.currency }}</td>
+            <td class="muted" style="font-size:11px;">{{ f.seniority }}</td>
+            <td class="num text-muted">{{ f.credit_spread_bps }}</td>
+            <td class="muted">{{ f.maturity_date }}</td>
+            <td class="num text-muted">{{ "%.3f%%"|format(f.pd * 100) }}</td>
+            <td class="num">{{ (f.ead * 1000)|round(1) }}</td>
+            <td class="num">{{ (f.expected_loss * 1000)|round(3) }}</td>
+            <td class="{% if f.status == 'Watchlist' %}text-amber{% elif f.status == 'Defaulted' %}text-red{% else %}text-green{% endif %}">{{ f.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Live trades -->
+  {% if trades %}
+  <div class="table-card">
+    <div class="table-card-header"><h3>Live Trades</h3><span class="badge badge-blue">{{ trades|length }} positions</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Trade ID</th>
+            <th>Desk</th>
+            <th>Product</th>
+            <th>Direction</th>
+            <th class="num">Notional (M)</th>
+            <th>Currency</th>
+            <th class="num">MtM (USD M)</th>
+            <th class="num">DV01</th>
+            <th>Maturity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in trades %}
+          <tr>
+            <td class="muted" style="font-size:11px;">{{ t.trade_id }}</td>
+            <td>{{ t.desk }}</td>
+            <td class="muted">{{ t.product }}</td>
+            <td class="{% if t.direction in ['Pay','Long','Buy'] %}text-green{% else %}text-red{% endif %}">{{ t.direction }}</td>
+            <td class="num">{{ t.notional }}</td>
+            <td class="muted">{{ t.currency }}</td>
+            <td class="num {% if t.mark_to_market > 0 %}text-green{% elif t.mark_to_market < 0 %}text-red{% endif %}">{{ "%.2f"|format(t.mark_to_market) }}</td>
+            <td class="num text-muted">{{ "%.4f"|format(t.dv01) if t.dv01 else '—' }}</td>
+            <td class="muted">{{ t.maturity_date }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Financials chart
+const finYears  = {{ fin_years | tojson }};
+const finRev    = {{ fin_rev   | tojson }};
+const finEbitda = {{ fin_ebitda| tojson }};
+makeChart('cFinancials', {
+  type: 'bar',
+  data: {
+    labels: finYears,
+    datasets: [
+      { label: 'Revenue',  data: finRev,    backgroundColor: COLORS.blue   + 'aa', borderRadius: 4 },
+      { label: 'EBITDA',   data: finEbitda, backgroundColor: COLORS.green  + 'aa', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' } }
+    }
+  }
+});
+
+// PD trend
+makeChart('cPd', {
+  type: 'line',
+  data: {
+    labels: {{ pd_dates | tojson }},
+    datasets: [{
+      data: {{ pd_values | tojson }},
+      borderColor: COLORS.amber,
+      backgroundColor: COLORS.amber + '22',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => (v * 100).toFixed(2) + '%' } }
+    }
+  }
+});
+
+{% if pfe_profile %}
+// PFE profile
+makeChart('cPfe', {
+  type: 'line',
+  data: {
+    labels: ['1M','3M','6M','1Y','2Y','3Y','5Y','7Y','10Y'],
+    datasets: [{
+      label: 'PFE',
+      data: {{ pfe_values | tojson }},
+      borderColor: COLORS.purple,
+      backgroundColor: COLORS.purple + '22',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(0) + 'M' } }
+    }
+  }
+});
+
+// Leverage trend
+makeChart('cLeverage', {
+  type: 'line',
+  data: {
+    labels: finYears,
+    datasets: [{
+      data: {{ fin_leverage | tojson }},
+      borderColor: COLORS.orange,
+      backgroundColor: COLORS.orange + '22',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => v.toFixed(1) + '×' } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

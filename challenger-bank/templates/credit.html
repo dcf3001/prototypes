@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Credit Risk{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h1>Credit Risk</h1>
+  <p class="subtitle">Loan book, expected loss, risk-weighted assets and rating migration</p>
+</div>
+<main>
+
+  <div class="kpi-row cols-5">
+    <div class="kpi accent">
+      <div class="kpi-label">Total EAD</div>
+      <div class="kpi-value">${{ "%.1f"|format(port.total_ead) }}B</div>
+      <div class="kpi-sub">{{ port.fac_count }} active facilities</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Expected Loss</div>
+      <div class="kpi-value">${{ "%.0f"|format(port.total_el * 1000) }}M</div>
+      <div class="kpi-sub">Annualised (PD × LGD × EAD)</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Credit RWA</div>
+      <div class="kpi-value">${{ "%.1f"|format(port.total_rwa) }}B</div>
+      <div class="kpi-sub">Basel III Standardised Approach</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg PD</div>
+      <div class="kpi-value">{{ "%.2f"|format(port.avg_pd * 100) }}%</div>
+      <div class="kpi-sub">Portfolio weighted average</div>
+    </div>
+    <div class="kpi {% if port.watchlist > 0 %}amber{% endif %}">
+      <div class="kpi-label">Watchlist / Events</div>
+      <div class="kpi-value">{{ port.watchlist }}</div>
+      <div class="kpi-sub">Active credit alerts</div>
+    </div>
+  </div>
+
+  <div class="charts-row cols-2">
+    <div class="chart-card">
+      <h3>EAD Concentration by Sector <span class="sub">USD billions</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cSector"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Rating Distribution <span class="sub">EAD by internal rating</span></h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="cRating"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Facility table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>Loan Book</h3>
+      <div class="filter-row">
+        <span class="filter-label">Filter:</span>
+        <select id="fCountry" onchange="filterTable()">
+          <option value="">All Countries</option>
+          {% for c in countries %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+        <select id="fSector" onchange="filterTable()">
+          <option value="">All Sectors</option>
+          {% for s in sectors %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+        <select id="fStatus" onchange="filterTable()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Watchlist">Watchlist</option>
+          <option value="Repaid">Repaid</option>
+        </select>
+        <input id="fSearch" type="text" placeholder="Search counterparty…" oninput="filterTable()" style="width:180px;">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="facilityTable">
+        <thead>
+          <tr>
+            <th>Counterparty</th>
+            <th>Country</th>
+            <th>Sector</th>
+            <th>Rating</th>
+            <th>Type</th>
+            <th>Seniority</th>
+            <th class="num">Limit</th>
+            <th class="num">Drawn</th>
+            <th class="num">EAD (USD M)</th>
+            <th class="num">PD</th>
+            <th class="num">LGD</th>
+            <th class="num">EL (USD M)</th>
+            <th class="num">RWA (USD M)</th>
+            <th>Maturity</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in facilities %}
+          <tr data-country="{{ f.country_iso2 }}" data-sector="{{ f.sector }}" data-status="{{ f.status }}" data-name="{{ f.counterparty_name|lower }}">
+            <td><a class="row-link" href="/counterparty/{{ f.counterparty_id }}">{{ f.counterparty_name }}</a></td>
+            <td class="muted">{{ f.country_iso2 }}</td>
+            <td class="muted">{{ f.sector }}</td>
+            <td><span class="badge {{ f.internal_rating|rating_badge }}">{{ f.internal_rating }}</span></td>
+            <td class="muted">{{ f.facility_type }}</td>
+            <td class="muted" style="font-size:11px;">{{ f.seniority }}</td>
+            <td class="num">{{ f.limit_amount|round(2) }} {{ f.currency }}</td>
+            <td class="num">{{ f.drawn_amount|round(2) }} {{ f.currency }}</td>
+            <td class="num">{{ (f.ead * 1000)|round(1) }}</td>
+            <td class="num text-{% if f.pd > 0.05 %}red{% elif f.pd > 0.01 %}amber{% else %}muted{% endif %}">{{ "%.3f%%"|format(f.pd * 100) }}</td>
+            <td class="num text-muted">{{ "%.0f%%"|format(f.lgd * 100) }}</td>
+            <td class="num">{{ (f.expected_loss * 1000)|round(3) }}</td>
+            <td class="num">{{ (f.rwa * 1000)|round(1) }}</td>
+            <td class="muted">{{ f.maturity_date }}</td>
+            <td>
+              {% if f.status == 'Active' %}<span class="text-green">Active</span>
+              {% elif f.status == 'Watchlist' %}<span class="text-amber">Watchlist</span>
+              {% elif f.status == 'Defaulted' %}<span class="text-red">Defaulted</span>
+              {% else %}<span class="text-muted">{{ f.status }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Sector chart
+const secLabels = {{ sector_labels | tojson }};
+const secValues = {{ sector_values | tojson }};
+makeChart('cSector', {
+  type: 'bar',
+  data: { labels: secLabels, datasets: [{ data: secValues, backgroundColor: COLORS.blue + 'cc', borderRadius: 4 }] },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(1) + 'B' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// Rating bar
+const ratingLabels = {{ rating_labels | tojson }};
+const ratingValues = {{ rating_values | tojson }};
+const ratingColors = ratingLabels.map(r => {
+  if (r.startsWith('AA')) return COLORS.green;
+  if (r.startsWith('A'))  return COLORS.teal;
+  if (r.startsWith('BBB')) return COLORS.blue;
+  if (r.startsWith('BB')) return COLORS.amber;
+  return COLORS.red;
+});
+makeChart('cRating', {
+  type: 'bar',
+  data: { labels: ratingLabels, datasets: [{ data: ratingValues, backgroundColor: ratingColors, borderRadius: 4 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#30363d' }, ticks: { callback: v => '$' + v.toFixed(1) + 'B' } }
+    }
+  }
+});
+
+// Table filter
+function filterTable() {
+  const country = document.getElementById('fCountry').value;
+  const sector  = document.getElementById('fSector').value;
+  const status  = document.getElementById('fStatus').value;
+  const search  = document.getElementById('fSearch').value.toLowerCase();
+  document.querySelectorAll('#facilityTable tbody tr').forEach(row => {
+    const ok = (!country || row.dataset.country === country)
+            && (!sector  || row.dataset.sector  === sector)
+            && (!status  || row.dataset.status  === status)
+            && (!search  || row.dataset.name.includes(search));
+    row.style.display = ok ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
