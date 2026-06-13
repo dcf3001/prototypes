@@ -78,7 +78,7 @@ async def main():
         print(f"[{prefix:<8}] {name:<35}", end="", flush=True)
         t0 = time.time()
         try:
-            result = await run_ai_rating(iso2)
+            result = await run_ai_rating(iso2, web_research=False)
             r = result["rating"]
             rating_str  = r["rating"]
             score_str   = f"{r['composite_score']:.1f}" if r.get("composite_score") else "—"

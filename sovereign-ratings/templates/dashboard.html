@@ -72,7 +72,12 @@
           data-iso="{{ c.iso2|lower }}"
           data-region="{{ c.region or '' }}"
           data-category="{{ c.rating|rating_category }}">
-        <td style="font-weight:600;color:var(--ink)">{{ c.name }}</td>
+        <td style="font-weight:600;color:var(--ink)">
+          {{ c.name }}
+          {% if c.pending_review %}
+            <span title="New AI update awaiting review" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:6px;vertical-align:middle"></span>
+          {% endif %}
+        </td>
         <td class="text-mono" style="font-size:0.65rem;color:var(--ink3)">{{ c.iso2 }}</td>
         <td style="font-size:0.68rem;color:var(--ink3)">{{ c.region or '—' }}</td>
         <td>

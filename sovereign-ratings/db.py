@@ -88,15 +88,35 @@ def _create_schema(conn):
             fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS update_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            country_id INTEGER NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+            reason TEXT NOT NULL,
+            field TEXT,
+            pillar TEXT,
+            score_old REAL,
+            score_new REAL,
+            composite_old REAL,
+            composite_new REAL,
+            rating_old TEXT,
+            rating_new TEXT,
+            outlook_old TEXT,
+            outlook_new TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
         CREATE INDEX IF NOT EXISTS idx_ratings_country_current ON ratings(country_id, is_current);
         CREATE INDEX IF NOT EXISTS idx_fundamentals_country_year ON fundamentals(country_id, year DESC);
         CREATE INDEX IF NOT EXISTS idx_news_country_date ON news_cache(country_id, published_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_update_log_created ON update_log(created_at DESC);
     """)
     conn.commit()
     # Migrations — safe to run on every startup
     for sql in [
         "ALTER TABLE ratings ADD COLUMN pillar_analysis TEXT",
         "ALTER TABLE ratings ADD COLUMN default_history TEXT",
+        "ALTER TABLE ratings ADD COLUMN pending_review INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE ratings ADD COLUMN daily_changes TEXT",
     ]:
         try:
             conn.execute(sql)

@@ -145,6 +145,9 @@
     .memory-countries{font-size:0.62rem;color:var(--ink3);margin-bottom:8px}
     .memory-actions{display:flex;gap:6px}
 
+    /* Track-changes highlight for AI blurb updates */
+    .diff-new{background:#fdf4d9;color:#8a6400;border-radius:1px;padding:0 2px;font-weight:600}
+
     /* Misc */
     .alert{padding:8px 14px;border-radius:2px;font-size:0.72rem;margin-bottom:14px;border:1px solid}
     .alert-info{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bdr)}
@@ -165,6 +168,7 @@
   <a href="/" class="brand">Sovereign Ratings Agency</a>
   <nav>
     <a href="/" class="{% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
+    <a href="/updates" class="{% if active == 'updates' %}active{% endif %}">Update Log</a>
     <a href="/memories" class="{% if active == 'memories' %}active{% endif %}">Memories</a>
   </nav>
   <span class="header-label">SRA</span>

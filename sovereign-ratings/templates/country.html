@@ -3,6 +3,7 @@
 
 {% block content %}
 {% set pa = country.pillar_analysis | parse_json if country.pillar_analysis else {} %}
+{% set dc = country.daily_changes | parse_json if country.daily_changes else {} %}
 {% set f  = fundamentals[0] if fundamentals else none %}
 
 <a href="/" style="color:var(--blue);font-size:0.7rem;display:inline-block;margin-bottom:14px;letter-spacing:0.04em">← Dashboard</a>
@@ -21,16 +22,33 @@
       <!-- Rating row -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         {% if country.rating %}
-          <span class="rating-badge" style="background:{{ country.rating|rating_color }};font-size:1.2rem;padding:5px 14px">
+          {% if dc.rating_old %}
+            <span class="rating-badge" style="background:{{ dc.rating_old|rating_color }};font-size:1.2rem;padding:5px 14px;opacity:.5;text-decoration:line-through">
+              {{ dc.rating_old }}
+            </span>
+            <span style="color:var(--gold);font-weight:700">→</span>
+          {% endif %}
+          <span class="rating-badge" style="background:{{ country.rating|rating_color }};font-size:1.2rem;padding:5px 14px;{% if dc.rating_old %}box-shadow:0 0 0 2px var(--gold){% endif %}">
             {{ country.rating }}
           </span>
           {% if country.outlook %}
-            <span class="outlook-badge" style="{{ country.outlook|outlook_style }};padding:4px 10px;font-size:0.65rem">
+            {% if dc.outlook_old %}
+              <span class="outlook-badge" style="{{ dc.outlook_old|outlook_style }};padding:4px 10px;font-size:0.65rem;opacity:.5;text-decoration:line-through">
+                {{ dc.outlook_old }}
+              </span>
+              <span style="color:var(--gold);font-weight:700">→</span>
+            {% endif %}
+            <span class="outlook-badge" style="{{ country.outlook|outlook_style }};padding:4px 10px;font-size:0.65rem;{% if dc.outlook_old %}box-shadow:0 0 0 2px var(--gold){% endif %}">
               {{ country.outlook }}
             </span>
           {% endif %}
           <span style="font-size:0.72rem;color:var(--ink3);font-family:'JetBrains Mono',monospace">
-            Score: <strong style="color:var(--ink)">{{ country.composite_score|fmt_num(1) }}</strong> / 100
+            Score:
+            {% if dc.composite_old %}
+              <strong style="color:var(--ink3);text-decoration:line-through;font-weight:400">{{ dc.composite_old|fmt_num(1) }}</strong>
+              <span style="color:var(--gold)">→</span>
+            {% endif %}
+            <strong style="color:{% if dc.composite_old %}var(--gold){% else %}var(--ink){% endif %}">{{ country.composite_score|fmt_num(1) }}</strong> / 100
           </span>
           <span style="font-size:0.62rem;padding:2px 8px;border-radius:2px;
             background:{% if country.rating|rating_category=='Investment Grade' %}var(--green-bg){% elif country.rating|rating_category=='Sub-Investment Grade' %}var(--amber-bg){% else %}var(--red-bg){% endif %};
@@ -52,13 +70,18 @@
       {% set rationale_text = country.override_rationale or country.ai_rationale %}
       {% if rationale_text %}
         <div style="background:var(--blue-bg);border-left:3px solid var(--blue-bdr);border-radius:0 2px 2px 0;padding:10px 14px;font-size:0.72rem;color:var(--ink2);line-height:1.75;max-width:720px;font-family:'Playfair Display',serif;font-style:italic">
-          {{ rationale_text }}
+          {{ rationale_text | render_diff }}
         </div>
       {% endif %}
     </div>
 
     <!-- Action buttons -->
     <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end">
+      {% if country.pending_review %}
+        <span style="font-size:0.6rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--gold);border-radius:2px">
+          ● Updated today
+        </span>
+      {% endif %}
       <button id="rerate-btn" class="btn btn-blue" onclick="rerateWithAI('{{ country.iso2 }}')">
         ⟳ Re-rate with AI
       </button>
@@ -92,22 +115,29 @@
   {% if country.rating %}
     <h3 style="font-size:0.55rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:18px">Pillar Scorecard</h3>
     {% set pillars = [
-      ('Economic Strength',   country.score_economic,  '#1a3878', 'economy'),
-      ('Fiscal Position',     country.score_fiscal,    '#5a2d82', 'fiscal'),
-      ('External Position',   country.score_external,  '#1a6830', 'external'),
-      ('Monetary Policy',     country.score_monetary,  '#b06010', 'monetary'),
-      ('Banking Sector',      country.score_banking,   '#b02020', 'banking'),
-      ('Political Governance',country.score_political, '#1a6830', 'politics'),
+      ('Economic Strength',   country.score_economic,  '#1a3878', 'economy',  'economic_strength'),
+      ('Fiscal Position',     country.score_fiscal,    '#5a2d82', 'fiscal',   'fiscal_position'),
+      ('External Position',   country.score_external,  '#1a6830', 'external', 'external_position'),
+      ('Monetary Policy',     country.score_monetary,  '#b06010', 'monetary', 'monetary_policy'),
+      ('Banking Sector',      country.score_banking,   '#b02020', 'banking',  'banking_sector'),
+      ('Political Governance',country.score_political, '#1a6830', 'politics', 'political_governance'),
     ] %}
-    {% for label, score, color, tab_id in pillars %}
+    {% for label, score, color, tab_id, pa_key in pillars %}
     {% set lvl = score_label(score) %}
+    {% set changed = dc.pillar == pa_key %}
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;cursor:pointer"
          onclick="switchTab('{{ tab_id }}', document.querySelector('.tab-btn[onclick*=\\'{{ tab_id }}\\']'))">
       <span style="width:170px;font-size:0.72rem;color:var(--ink2);font-weight:600;flex-shrink:0">{{ label }}</span>
       <div style="flex:1;height:8px;background:var(--bg3);border-radius:1px;overflow:hidden">
         <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:1px;transition:width .5s"></div>
       </div>
-      <span style="width:28px;font-size:0.75rem;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--ink)">{{ score|fmt_num(0) }}</span>
+      {% if changed %}
+        <span style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--ink3);text-decoration:line-through">{{ dc.score_old|fmt_num(0) }}</span>
+        <span style="color:var(--gold);font-weight:700;font-size:0.7rem">→</span>
+        <span style="width:28px;font-size:0.75rem;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--gold)">{{ score|fmt_num(0) }}</span>
+      {% else %}
+        <span style="width:28px;font-size:0.75rem;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--ink)">{{ score|fmt_num(0) }}</span>
+      {% endif %}
       <span style="width:70px;font-size:0.58rem;font-weight:600;padding:2px 7px;border-radius:2px;
                    background:{{ lvl[1] }}22;color:{{ lvl[1] }};text-align:center;letter-spacing:0.04em">{{ lvl[0] }}</span>
     </div>
@@ -129,7 +159,13 @@
   <div style="background:var(--bg2);border-radius:2px;padding:20px;margin-bottom:20px;border-left:4px solid {{ color }};border:1px solid var(--border);border-left:4px solid {{ color }}">
     <div style="font-size:0.55rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:6px">{{ label }}</div>
     <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px">
-      <span style="font-size:3.5rem;font-weight:700;line-height:1;color:{{ color }};font-family:'JetBrains Mono',monospace">{{ score|fmt_num(0) }}</span>
+      {% if dc.pillar == pa_key %}
+        <span style="font-size:1.6rem;font-weight:700;line-height:1;color:var(--ink3);font-family:'JetBrains Mono',monospace;text-decoration:line-through">{{ dc.score_old|fmt_num(0) }}</span>
+        <span style="font-size:1.6rem;color:var(--gold);font-weight:700">→</span>
+        <span style="font-size:3.5rem;font-weight:700;line-height:1;color:var(--gold);font-family:'JetBrains Mono',monospace">{{ score|fmt_num(0) }}</span>
+      {% else %}
+        <span style="font-size:3.5rem;font-weight:700;line-height:1;color:{{ color }};font-family:'JetBrains Mono',monospace">{{ score|fmt_num(0) }}</span>
+      {% endif %}
       <span style="font-size:1.2rem;color:var(--ink3);font-weight:400;font-family:'JetBrains Mono',monospace">/100</span>
       <span style="margin-left:8px;font-size:0.62rem;font-weight:600;padding:3px 10px;border-radius:2px;
                    background:{{ lvl[1] }}22;color:{{ lvl[1] }};letter-spacing:0.06em">{{ lvl[0] }}</span>
@@ -159,7 +195,7 @@
       <div style="font-size:0.55rem;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:12px">Analysis</div>
       {% for para in analysis.get('summary','').split('\n\n') %}
         {% if para.strip() %}
-          <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:12px;font-family:'Libre Franklin',sans-serif">{{ para.strip() }}</p>
+          <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:12px;font-family:'Libre Franklin',sans-serif">{{ para.strip() | render_diff }}</p>
         {% endif %}
       {% endfor %}
     </div>
@@ -273,7 +309,7 @@
         <div style="font-size:0.55rem;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:14px">Default Episodes</div>
         {% for para in dh.split('\n\n') %}
           {% if para.strip() %}
-            <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:14px;font-family:'Libre Franklin',sans-serif">{{ para.strip() }}</p>
+            <p style="font-size:0.82rem;line-height:1.85;color:var(--ink2);margin-bottom:14px;font-family:'Libre Franklin',sans-serif">{{ para.strip() | render_diff }}</p>
           {% endif %}
         {% endfor %}
       </div>

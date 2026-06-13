@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Update Log — Sovereign Ratings Agency{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Update Log</h1>
+<p class="page-subtitle">
+  A record of the changes the daily AI news scan has made to each country's analysis, scores, ratings, and outlooks — and why.
+</p>
+
+{% if not updates %}
+  <div class="empty card">No updates yet. The daily news scan will log changes here as they happen.</div>
+{% else %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Country</th>
+          <th>Field Updated</th>
+          <th>Score</th>
+          <th>Rating</th>
+          <th>Outlook</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in updates %}
+        <tr class="clickable-row" onclick="location.href='/country/{{ u.country_iso2 }}'">
+          <td class="text-mono">{{ u.created_at|fmt_date }}</td>
+          <td>{{ u.country_name or '—' }}</td>
+          <td>
+            {{ u.field|field_label }}{% if u.pillar %} <span class="text-muted">({{ u.pillar|pillar_label }})</span>{% endif %}
+          </td>
+          <td class="text-mono">
+            {% if u.score_old is not none and u.score_new is not none %}
+              {{ u.score_old|fmt_num(0) }} → {{ u.score_new|fmt_num(0) }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if u.rating_old and u.rating_new %}
+              <span class="rating-badge" style="background:{{ u.rating_old|rating_color }}">{{ u.rating_old }}</span>
+              →
+              <span class="rating-badge" style="background:{{ u.rating_new|rating_color }}">{{ u.rating_new }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if u.outlook_old and u.outlook_new %}
+              <span class="outlook-badge" style="{{ u.outlook_old|outlook_style }}">{{ u.outlook_old }}</span>
+              →
+              <span class="outlook-badge" style="{{ u.outlook_new|outlook_style }}">{{ u.outlook_new }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ u.reason }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

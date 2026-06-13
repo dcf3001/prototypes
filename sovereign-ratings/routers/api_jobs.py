@@ -1,7 +1,8 @@
 import asyncio
 import os
 from fastapi import APIRouter
-from jobs.scheduler import run_daily_news, run_weekly_wb_sync, run_weekly_rerate
+from jobs.scheduler import run_daily_news, run_weekly_wb_sync, run_monthly_rerate
+from services.blurb_updater import run_daily_blurb_scan
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
@@ -33,5 +34,11 @@ async def sync_wb():
 
 @router.post("/rerate-all")
 async def rerate_all():
-    asyncio.create_task(run_weekly_rerate())
+    asyncio.create_task(run_monthly_rerate())
     return {"message": "AI re-rate started in background"}
+
+
+@router.post("/blurb-scan")
+async def blurb_scan():
+    asyncio.create_task(run_daily_blurb_scan())
+    return {"message": "Blurb scan started in background"}

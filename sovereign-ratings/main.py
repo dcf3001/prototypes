@@ -1,8 +1,10 @@
 import os
+import re
 import base64
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime
+from markupsafe import Markup, escape
 
 from dotenv import load_dotenv
 # Load .env from parent dir (local dev) — on Railway env vars are injected directly
@@ -109,6 +111,46 @@ def parse_json(s):
     except Exception:
         return {}
 
+PILLAR_LABELS = {
+    "economic_strength":   "Economic Strength",
+    "fiscal_position":     "Fiscal Position",
+    "external_position":   "External Position",
+    "monetary_policy":     "Monetary Policy",
+    "banking_sector":      "Banking Sector",
+    "political_governance": "Political Governance",
+}
+
+FIELD_LABELS = {
+    "ai_rationale":     "Overall Rationale",
+    "default_history":  "Default History",
+    "pillar_analysis":  "Pillar Summary",
+}
+
+def pillar_label(key):
+    return PILLAR_LABELS.get(key, key)
+
+def field_label(key):
+    return FIELD_LABELS.get(key, key)
+
+DIFF_MARK_RE = re.compile(
+    re.escape("[[NEW]]") + r"(.*?)" + re.escape("[[/NEW]]"), re.DOTALL
+)
+
+def render_diff(text):
+    """Escape text for safe HTML output, rendering [[NEW]]...[[/NEW]] markers
+    (added by the daily blurb-update job) as gold 'track changes' highlights."""
+    if not text:
+        return ""
+    parts = []
+    last = 0
+    for m in DIFF_MARK_RE.finditer(text):
+        parts.append(escape(text[last:m.start()]))
+        parts.append(Markup('<span class="diff-new">') + escape(m.group(1)) + Markup('</span>'))
+        last = m.end()
+    parts.append(escape(text[last:]))
+    return Markup("").join(parts)
+
+
 def score_label(v):
     if v is None:
         return ("—", "#9e9e9e")
@@ -153,6 +195,9 @@ templates.env.filters["fmt_num"] = fmt_num
 templates.env.filters["fmt_date"] = fmt_date
 templates.env.filters["parse_json_tags"] = parse_json_tags
 templates.env.filters["parse_json"] = parse_json
+templates.env.filters["render_diff"] = render_diff
+templates.env.filters["pillar_label"] = pillar_label
+templates.env.filters["field_label"] = field_label
 templates.env.globals["score_label"] = score_label
 
 # ── API routers ───────────────────────────────────────────────────────────────
@@ -172,7 +217,7 @@ async def dashboard(request: Request):
     db = get_db()
     rows = db.execute("""
         SELECT c.id, c.iso2, c.iso3, c.name, c.region, c.income_group,
-               r.rating, r.outlook, r.composite_score, r.source
+               r.rating, r.outlook, r.composite_score, r.source, r.pending_review
         FROM countries c
         LEFT JOIN ratings r ON r.country_id = c.id AND r.is_current = 1
         ORDER BY c.name
@@ -207,7 +252,7 @@ async def country_page(request: Request, iso2: str):
                r.score_economic, r.score_fiscal, r.score_external,
                r.score_monetary, r.score_banking, r.score_political,
                r.ai_rationale, r.override_rationale, r.pillar_analysis,
-               r.default_history, r.created_at as rated_at
+               r.default_history, r.created_at as rated_at, r.pending_review, r.daily_changes
         FROM countries c
         LEFT JOIN ratings r ON r.country_id = c.id AND r.is_current = 1
         WHERE c.iso2=?
@@ -270,6 +315,24 @@ async def memories_page(request: Request):
         "memories": memories,
         "all_countries": all_countries,
         "active": "memories",
+    })
+
+
+@app.get("/updates", response_class=HTMLResponse)
+async def updates_page(request: Request):
+    db = get_db()
+    rows = db.execute("""
+        SELECT u.*, c.name as country_name, c.iso2 as country_iso2
+        FROM update_log u
+        LEFT JOIN countries c ON c.id = u.country_id
+        ORDER BY u.created_at DESC
+        LIMIT 200
+    """).fetchall()
+    updates = [dict(r) for r in rows]
+
+    return templates.TemplateResponse(request, "updates.html", {
+        "updates": updates,
+        "active": "updates",
     })
 
 

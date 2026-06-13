@@ -15,7 +15,7 @@ def compute_composite(scores: dict) -> float:
     )
 
 
-async def run_ai_rating(iso2: str) -> dict:
+async def run_ai_rating(iso2: str, web_research: bool = True) -> dict:
     db = get_db()
 
     # 1. Look up country
@@ -64,8 +64,8 @@ async def run_ai_rating(iso2: str) -> dict:
         except Exception:
             pass
 
-    # 5. Web research brief (best-effort — skipped if API unavailable)
-    research_brief = await research_country(country["name"])
+    # 5. Web research brief (best-effort — skipped if disabled or API unavailable)
+    research_brief = await research_country(country["name"]) if web_research else ""
 
     # 6. Call GPT-4o
     ai_result = await get_rating(
