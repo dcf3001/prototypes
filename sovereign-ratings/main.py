@@ -180,13 +180,11 @@ async def dashboard(request: Request):
     countries = [dict(r) for r in rows]
 
     rated = sum(1 for c in countries if c["rating"])
-    ig = sum(1 for c in countries if c["rating"] and RATING_ORDER.index(c["rating"]) <= 9
-             if c["rating"] in RATING_ORDER)
+    ig = sum(1 for c in countries if c["rating"] in RATING_ORDER and RATING_ORDER.index(c["rating"]) <= 9)
 
     regions = sorted({c["region"] for c in countries if c["region"]})
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "countries": countries,
         "total": len(countries),
         "rated": rated,
@@ -240,8 +238,7 @@ async def country_page(request: Request, iso2: str):
         (iso2,)
     ).fetchall()]
 
-    return templates.TemplateResponse("country.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "country.html", {
         "country": country,
         "fundamentals": fundamentals,
         "history": history,
@@ -269,8 +266,7 @@ async def memories_page(request: Request):
         "SELECT id, iso2, name FROM countries ORDER BY name"
     ).fetchall()]
 
-    return templates.TemplateResponse("memories.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "memories.html", {
         "memories": memories,
         "all_countries": all_countries,
         "active": "memories",
