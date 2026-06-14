@@ -12,11 +12,16 @@ _scheduler = None
 
 NEWSDATA_DAILY_CAP = 195  # stay under NewsData.io's 200 requests/day free quota
 
+# Temporary pilot list while we validate the NewsData.io integration, to avoid
+# burning through the daily quota. Remove this filter to cover all countries.
+PILOT_ISO2 = {"BR", "CN", "ZA", "RU", "KR", "TR", "IN", "AR", "SA", "GB"}
+
 
 async def run_daily_news():
     print("[scheduler] Starting daily news fetch...")
     db = get_db()
     countries = db.execute("SELECT iso2, name FROM countries ORDER BY id").fetchall()
+    countries = [c for c in countries if c["iso2"] in PILOT_ISO2]
     n = len(countries)
     cap = min(NEWSDATA_DAILY_CAP, n)
     # Rotate which countries get covered each day so everyone is hit over time
@@ -31,7 +36,7 @@ async def run_daily_news():
         except Exception as e:
             print(f"[scheduler] News failed for {c['iso2']}: {e}")
             errors += 1
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(2.0)
     print(f"[scheduler] News done: {success} ok, {errors} errors ({cap}/{n} countries this run)")
 
 
