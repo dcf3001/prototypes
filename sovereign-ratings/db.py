@@ -88,6 +88,16 @@ def _create_schema(conn):
             fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS scan_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            countries_total INTEGER NOT NULL,
+            with_news INTEGER NOT NULL,
+            candidates INTEGER NOT NULL,
+            updated INTEGER NOT NULL,
+            errors INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS update_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             country_id INTEGER NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
@@ -109,6 +119,7 @@ def _create_schema(conn):
         CREATE INDEX IF NOT EXISTS idx_fundamentals_country_year ON fundamentals(country_id, year DESC);
         CREATE INDEX IF NOT EXISTS idx_news_country_date ON news_cache(country_id, published_at DESC);
         CREATE INDEX IF NOT EXISTS idx_update_log_created ON update_log(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_scan_log_created ON scan_log(created_at DESC);
     """)
     conn.commit()
     # Migrations — safe to run on every startup

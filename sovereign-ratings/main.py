@@ -97,6 +97,14 @@ def fmt_date(s):
     except Exception:
         return str(s)[:10]
 
+def fmt_datetime(s):
+    if not s:
+        return "—"
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).strftime("%b %d, %Y %H:%M")
+    except Exception:
+        return str(s)[:16]
+
 def parse_json_tags(s):
     import json
     try:
@@ -193,6 +201,7 @@ templates.env.filters["rating_category"] = rating_category
 templates.env.filters["outlook_style"] = outlook_style
 templates.env.filters["fmt_num"] = fmt_num
 templates.env.filters["fmt_date"] = fmt_date
+templates.env.filters["fmt_datetime"] = fmt_datetime
 templates.env.filters["parse_json_tags"] = parse_json_tags
 templates.env.filters["parse_json"] = parse_json
 templates.env.filters["render_diff"] = render_diff
@@ -330,8 +339,13 @@ async def updates_page(request: Request):
     """).fetchall()
     updates = [dict(r) for r in rows]
 
+    scans = [dict(r) for r in db.execute("""
+        SELECT * FROM scan_log ORDER BY created_at DESC LIMIT 30
+    """).fetchall()]
+
     return templates.TemplateResponse(request, "updates.html", {
         "updates": updates,
+        "scans": scans,
         "active": "updates",
     })
 

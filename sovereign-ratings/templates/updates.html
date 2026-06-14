@@ -7,6 +7,42 @@
   A record of the changes the daily AI news scan has made to each country's analysis, scores, ratings, and outlooks — and why.
 </p>
 
+<h2 class="page-title" style="font-size:1rem;margin-top:4px">Scan History</h2>
+<p class="page-subtitle">
+  Every time the daily news scan runs — even on days with no material updates.
+</p>
+
+{% if not scans %}
+  <div class="empty card mb-4">No scans have run yet.</div>
+{% else %}
+  <div class="table-wrap mb-5">
+    <table>
+      <thead>
+        <tr>
+          <th>Run At</th>
+          <th>Countries with News</th>
+          <th>Flagged as Material</th>
+          <th>Updated</th>
+          <th>Errors</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in scans %}
+        <tr>
+          <td class="text-mono">{{ s.created_at|fmt_datetime }}</td>
+          <td class="text-mono">{{ s.with_news }} / {{ s.countries_total }}</td>
+          <td class="text-mono">{{ s.candidates }}</td>
+          <td class="text-mono">{{ s.updated }}</td>
+          <td class="text-mono">{{ s.errors }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<h2 class="page-title" style="font-size:1rem">Changes Made</h2>
+
 {% if not updates %}
   <div class="empty card">No updates yet. The daily news scan will log changes here as they happen.</div>
 {% else %}

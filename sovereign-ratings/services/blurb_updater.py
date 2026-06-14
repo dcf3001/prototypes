@@ -227,7 +227,7 @@ async def run_daily_blurb_scan():
     _clear_stale_updates(db)
 
     countries = db.execute("SELECT * FROM countries").fetchall()
-    updated, scanned, errors = 0, 0, 0
+    with_news, candidates, updated, errors = 0, 0, 0, 0
 
     for c in countries:
         country = dict(c)
@@ -236,7 +236,10 @@ async def run_daily_blurb_scan():
             (country["id"],)
         ).fetchall()
         headlines = [dict(r) for r in news_rows]
-        if not headlines or not _is_candidate(headlines):
+        if not headlines:
+            continue
+        with_news += 1
+        if not _is_candidate(headlines):
             continue
 
         rating_row = db.execute(
@@ -247,7 +250,7 @@ async def run_daily_blurb_scan():
             continue
         rating = dict(rating_row)
 
-        scanned += 1
+        candidates += 1
         try:
             edit = await _review_country(country, rating, headlines)
             if not edit:
@@ -308,4 +311,11 @@ async def run_daily_blurb_scan():
             print(f"[blurb_updater] Failed for {country['iso2']}: {e}")
             errors += 1
 
-    print(f"[blurb_updater] Done: {scanned} scanned, {updated} updated, {errors} errors")
+    db.execute(
+        "INSERT INTO scan_log (countries_total, with_news, candidates, updated, errors) VALUES (?,?,?,?,?)",
+        (len(countries), with_news, candidates, updated, errors)
+    )
+    db.commit()
+
+    print(f"[blurb_updater] Done: {with_news}/{len(countries)} had news, "
+          f"{candidates} candidates, {updated} updated, {errors} errors")
