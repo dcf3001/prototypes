@@ -1,7 +1,8 @@
 import asyncio
+from datetime import date
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import get_db
-from services.gdelt import fetch_news_for_country
+from services.newsdata import fetch_news_for_country
 from services.worldbank import sync_country_fundamentals
 from services.rating_engine import run_ai_rating
 from services.blurb_updater import run_daily_blurb_scan, run_weekly_blurb_scan
@@ -9,20 +10,29 @@ from services.blurb_updater import run_daily_blurb_scan, run_weekly_blurb_scan
 _scheduler = None
 
 
+NEWSDATA_DAILY_CAP = 195  # stay under NewsData.io's 200 requests/day free quota
+
+
 async def run_daily_news():
     print("[scheduler] Starting daily news fetch...")
     db = get_db()
-    countries = db.execute("SELECT iso2, name FROM countries").fetchall()
+    countries = db.execute("SELECT iso2, name FROM countries ORDER BY id").fetchall()
+    n = len(countries)
+    cap = min(NEWSDATA_DAILY_CAP, n)
+    # Rotate which countries get covered each day so everyone is hit over time
+    offset = date.today().toordinal() % n
+    today = [countries[(offset + i) % n] for i in range(cap)]
+
     success, errors = 0, 0
-    for c in countries:
+    for c in today:
         try:
             await fetch_news_for_country(db, c["iso2"], c["name"])
             success += 1
         except Exception as e:
             print(f"[scheduler] News failed for {c['iso2']}: {e}")
             errors += 1
-        await asyncio.sleep(6.0)  # GDELT rate limit: ~1 request every 5 seconds
-    print(f"[scheduler] News done: {success} ok, {errors} errors")
+        await asyncio.sleep(1.0)
+    print(f"[scheduler] News done: {success} ok, {errors} errors ({cap}/{n} countries this run)")
 
 
 async def run_weekly_wb_sync():

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from db import get_db
-from services.gdelt import fetch_news_for_country
+from services.newsdata import fetch_news_for_country
 
 router = APIRouter(prefix="/api/news", tags=["news"])
 

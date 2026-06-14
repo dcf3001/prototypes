@@ -1,8 +1,8 @@
-import asyncio
+import os
 import httpx
 from datetime import datetime
 
-GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+NEWSDATA_URL = "https://newsdata.io/api/1/news"
 
 POSITIVE_WORDS = ["growth", "surplus", "reform", "upgrade", "recovery", "boom",
                   "expansion", "investment", "strong", "positive", "gdp"]
@@ -23,12 +23,12 @@ def compute_sentiment(headline: str) -> float:
     return max(-1.0, min(1.0, score / 3.0))
 
 
-def _parse_seendate(s: str) -> str | None:
-    # GDELT format: "20260613T120000Z"
+def _parse_pubdate(s: str) -> str | None:
+    # NewsData format: "2026-06-14 10:00:00"
     if not s:
         return None
     try:
-        return datetime.strptime(s, "%Y%m%dT%H%M%SZ").isoformat() + "Z"
+        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S").isoformat() + "Z"
     except ValueError:
         return None
 
@@ -39,35 +39,27 @@ async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
         raise ValueError(f"Country not found: {iso2}")
     country = dict(row)
 
-    query = f'"{country_name}" economy sourcelang:english'
+    api_key = os.environ.get("NEWSDATA_API_KEY", "")
+    if not api_key:
+        print("[newsdata] NEWSDATA_API_KEY not set, skipping")
+        return 0
+
     params = {
-        "query": query,
-        "mode": "artlist",
-        "format": "json",
-        "maxrecords": 10,
-        "timespan": "1d",
-        "sort": "datedesc",
+        "apikey": api_key,
+        "country": iso2.lower(),
+        "language": "en",
+        "category": "business,politics,world",
     }
 
-    data = {}
+    articles = []
     async with httpx.AsyncClient(timeout=20.0) as client:
-        for attempt in range(3):
-            resp = await client.get(GDELT_URL, params=params)
-            if resp.status_code == 429:
-                # GDELT rate-limits per-IP; back off and retry a couple of times
-                await asyncio.sleep(5 * (attempt + 1))
-                continue
-            resp.raise_for_status()
-            try:
-                data = resp.json()
-            except ValueError:
-                # GDELT returns an empty/non-JSON body when there are no results
-                data = {}
-            break
+        resp = await client.get(NEWSDATA_URL, params=params)
+        if resp.status_code == 429:
+            print(f"[newsdata] Rate-limited fetching news for {country_name}, skipping")
         else:
-            print(f"[gdelt] Rate-limited fetching news for {country_name}, skipping")
-
-    articles = data.get("articles", [])
+            resp.raise_for_status()
+            data = resp.json()
+            articles = data.get("results", [])
 
     # Remove stale entries older than 7 days
     db.execute(
@@ -86,9 +78,9 @@ async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
             (
                 country["id"],
                 headline,
-                a.get("domain"),
-                a.get("url"),
-                _parse_seendate(a.get("seendate")),
+                a.get("source_id"),
+                a.get("link"),
+                _parse_pubdate(a.get("pubDate")),
                 compute_sentiment(headline),
             )
         )
