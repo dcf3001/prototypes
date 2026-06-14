@@ -78,7 +78,7 @@ def _clear_stale_updates(db):
         print(f"[blurb_updater] Cleared stale highlights for {len(rows)} countries")
 
 
-async def _review_country(country: dict, rating: dict, headlines: list[dict]) -> dict | None:
+async def _review_country(country: dict, rating: dict, headlines: list[dict], period_label: str = "today") -> dict | None:
     pillar_analysis = json.loads(rating["pillar_analysis"] or "{}")
 
     head_text = "\n".join(
@@ -104,14 +104,14 @@ async def _review_country(country: dict, rating: dict, headlines: list[dict]) ->
         if rating_idx < len(RATINGS_SCALE) - 1:
             adjacent.append(RATINGS_SCALE[rating_idx + 1])
 
-    system_prompt = f"""You are a sovereign credit analyst doing a daily news review for {country['name']}.
+    system_prompt = f"""You are a sovereign credit analyst doing a news review for {country['name']}.
 
-Below are today's news headlines and the existing analytical text and scores for this country
+Below are news headlines from {period_label} and the existing analytical text and scores for this country
 (six pillar summaries with their 0-100 scores, the overall rating/outlook/composite score, the
 overall rationale, and the default history).
 
-Your job: decide whether any of today's headlines represent a MATERIAL development that should
-be reflected in the existing analysis and scores. Most days, NO update is needed. Only flag
+Your job: decide whether any of these headlines represent a MATERIAL development that should
+be reflected in the existing analysis and scores. Most of the time, NO update is needed. Only flag
 genuinely material developments — e.g. a credit rating action, a default or debt restructuring,
 a coup or abrupt change of government, a major economic data revision, new sanctions, a natural
 disaster with significant economic impact, or a new IMF programme. Routine or minor news should
@@ -144,7 +144,7 @@ Respond ONLY with valid JSON, no markdown fences:
   "new_outlook": "<outlook, optional>", "reason": "<one sentence>"}}
 """
 
-    user_prompt = f"""## Today's headlines for {country['name']}
+    user_prompt = f"""## Headlines for {country['name']} ({period_label})
 {head_text}
 
 ## Current rating
@@ -220,8 +220,8 @@ Rating: {rating['rating']} | Outlook: {rating['outlook']} | Composite score: {ra
     return edit
 
 
-async def run_daily_blurb_scan():
-    print("[blurb_updater] Starting daily blurb scan...")
+async def _run_blurb_scan(scope: str, news_sql: str, period_label: str):
+    print(f"[blurb_updater] Starting {scope} blurb scan...")
     db = get_db()
 
     _clear_stale_updates(db)
@@ -231,10 +231,7 @@ async def run_daily_blurb_scan():
 
     for c in countries:
         country = dict(c)
-        news_rows = db.execute(
-            "SELECT * FROM news_cache WHERE country_id=? AND date(fetched_at)=date('now')",
-            (country["id"],)
-        ).fetchall()
+        news_rows = db.execute(news_sql, (country["id"],)).fetchall()
         headlines = [dict(r) for r in news_rows]
         if not headlines:
             continue
@@ -252,7 +249,7 @@ async def run_daily_blurb_scan():
 
         candidates += 1
         try:
-            edit = await _review_country(country, rating, headlines)
+            edit = await _review_country(country, rating, headlines, period_label)
             if not edit:
                 continue
 
@@ -312,10 +309,26 @@ async def run_daily_blurb_scan():
             errors += 1
 
     db.execute(
-        "INSERT INTO scan_log (countries_total, with_news, candidates, updated, errors) VALUES (?,?,?,?,?)",
-        (len(countries), with_news, candidates, updated, errors)
+        "INSERT INTO scan_log (scope, countries_total, with_news, candidates, updated, errors) VALUES (?,?,?,?,?,?)",
+        (scope, len(countries), with_news, candidates, updated, errors)
     )
     db.commit()
 
-    print(f"[blurb_updater] Done: {with_news}/{len(countries)} had news, "
+    print(f"[blurb_updater] Done ({scope}): {with_news}/{len(countries)} had news, "
           f"{candidates} candidates, {updated} updated, {errors} errors")
+
+
+async def run_daily_blurb_scan():
+    await _run_blurb_scan(
+        scope="daily",
+        news_sql="SELECT * FROM news_cache WHERE country_id=? AND date(fetched_at)=date('now')",
+        period_label="today",
+    )
+
+
+async def run_weekly_blurb_scan():
+    await _run_blurb_scan(
+        scope="weekly",
+        news_sql="SELECT * FROM news_cache WHERE country_id=? AND fetched_at >= datetime('now', '-7 days')",
+        period_label="the last 7 days",
+    )

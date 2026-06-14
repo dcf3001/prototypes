@@ -90,6 +90,7 @@ def _create_schema(conn):
 
         CREATE TABLE IF NOT EXISTS scan_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scope TEXT NOT NULL DEFAULT 'daily',
             countries_total INTEGER NOT NULL,
             with_news INTEGER NOT NULL,
             candidates INTEGER NOT NULL,
@@ -128,6 +129,7 @@ def _create_schema(conn):
         "ALTER TABLE ratings ADD COLUMN default_history TEXT",
         "ALTER TABLE ratings ADD COLUMN pending_review INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE ratings ADD COLUMN daily_changes TEXT",
+        "ALTER TABLE scan_log ADD COLUMN scope TEXT NOT NULL DEFAULT 'daily'",
     ]:
         try:
             conn.execute(sql)

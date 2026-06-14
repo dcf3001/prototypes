@@ -9,7 +9,8 @@
 
 <h2 class="page-title" style="font-size:1rem;margin-top:4px">Scan History</h2>
 <p class="page-subtitle">
-  Every time the daily news scan runs — even on days with no material updates.
+  Every time a news scan runs — even on days with no material updates. The daily scan reviews
+  today's headlines; the weekly scan re-checks the last 7 days as a catch-up.
 </p>
 
 {% if not scans %}
@@ -20,6 +21,7 @@
       <thead>
         <tr>
           <th>Run At</th>
+          <th>Type</th>
           <th>Countries with News</th>
           <th>Flagged as Material</th>
           <th>Updated</th>
@@ -30,6 +32,7 @@
         {% for s in scans %}
         <tr>
           <td class="text-mono">{{ s.created_at|fmt_datetime }}</td>
+          <td style="text-transform:capitalize">{{ s.scope }}</td>
           <td class="text-mono">{{ s.with_news }} / {{ s.countries_total }}</td>
           <td class="text-mono">{{ s.candidates }}</td>
           <td class="text-mono">{{ s.updated }}</td>
