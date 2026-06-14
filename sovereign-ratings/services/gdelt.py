@@ -1,5 +1,8 @@
+import asyncio
 import httpx
-import os
+from datetime import datetime
+
+GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 POSITIVE_WORDS = ["growth", "surplus", "reform", "upgrade", "recovery", "boom",
                   "expansion", "investment", "strong", "positive", "gdp"]
@@ -20,31 +23,49 @@ def compute_sentiment(headline: str) -> float:
     return max(-1.0, min(1.0, score / 3.0))
 
 
-async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
-    api_key = os.environ.get("NEWS_API_KEY", "").strip()
-    if not api_key:
-        print("[newsapi] NEWS_API_KEY not set — skipping")
-        return 0
+def _parse_seendate(s: str) -> str | None:
+    # GDELT format: "20260613T120000Z"
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, "%Y%m%dT%H%M%SZ").isoformat() + "Z"
+    except ValueError:
+        return None
 
+
+async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
     row = db.execute("SELECT * FROM countries WHERE iso2=?", (iso2,)).fetchone()
     if not row:
         raise ValueError(f"Country not found: {iso2}")
     country = dict(row)
 
-    query = f"{country_name} economy"
-    url = "https://newsapi.org/v2/everything"
+    query = f'"{country_name}" economy sourcelang:english'
     params = {
-        "q": query,
-        "language": "en",
-        "sortBy": "publishedAt",
-        "pageSize": 10,
-        "apiKey": api_key,
+        "query": query,
+        "mode": "artlist",
+        "format": "json",
+        "maxrecords": 10,
+        "timespan": "1d",
+        "sort": "datedesc",
     }
 
+    data = {}
     async with httpx.AsyncClient(timeout=20.0) as client:
-        resp = await client.get(url, params=params)
-        resp.raise_for_status()
-        data = resp.json()
+        for attempt in range(3):
+            resp = await client.get(GDELT_URL, params=params)
+            if resp.status_code == 429:
+                # GDELT rate-limits per-IP; back off and retry a couple of times
+                await asyncio.sleep(5 * (attempt + 1))
+                continue
+            resp.raise_for_status()
+            try:
+                data = resp.json()
+            except ValueError:
+                # GDELT returns an empty/non-JSON body when there are no results
+                data = {}
+            break
+        else:
+            print(f"[gdelt] Rate-limited fetching news for {country_name}, skipping")
 
     articles = data.get("articles", [])
 
@@ -56,7 +77,7 @@ async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
 
     for a in articles:
         headline = a.get("title") or ""
-        if not headline or headline == "[Removed]":
+        if not headline:
             continue
         db.execute(
             """INSERT OR IGNORE INTO news_cache
@@ -65,9 +86,9 @@ async def fetch_news_for_country(db, iso2: str, country_name: str) -> int:
             (
                 country["id"],
                 headline,
-                a.get("source", {}).get("name"),
+                a.get("domain"),
                 a.get("url"),
-                a.get("publishedAt"),
+                _parse_seendate(a.get("seendate")),
                 compute_sentiment(headline),
             )
         )

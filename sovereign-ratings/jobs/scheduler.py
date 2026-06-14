@@ -1,7 +1,7 @@
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import get_db
-from services.newsapi import fetch_news_for_country
+from services.gdelt import fetch_news_for_country
 from services.worldbank import sync_country_fundamentals
 from services.rating_engine import run_ai_rating
 from services.blurb_updater import run_daily_blurb_scan
@@ -21,7 +21,7 @@ async def run_daily_news():
         except Exception as e:
             print(f"[scheduler] News failed for {c['iso2']}: {e}")
             errors += 1
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(6.0)  # GDELT rate limit: ~1 request every 5 seconds
     print(f"[scheduler] News done: {success} ok, {errors} errors")
 
 
