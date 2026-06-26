@@ -58,6 +58,87 @@ async def research_country(country_name: str) -> str:
         return ""
 
 
+async def get_pillar_scores_agent(
+    country_name: str,
+    fundamentals: dict | None,
+    headlines: list,
+    memories: list,
+    research_brief: str = "",
+) -> dict:
+    """One independent scoring agent. Returns only six pillar scores (0-100)."""
+    def fmt(v, suffix=""):
+        return f"{float(v):.1f}{suffix}" if v is not None else "N/A"
+
+    fund_text = f"""GDP Growth: {fmt(fundamentals.get('gdp_growth'), '%')}
+GDP per Capita: ${fmt(fundamentals.get('gdp_per_capita'))}
+Government Debt/GDP: {fmt(fundamentals.get('debt_gdp'), '%')}
+Fiscal Deficit/GDP: {fmt(fundamentals.get('deficit_gdp'), '%')}
+Current Account/GDP: {fmt(fundamentals.get('ca_gdp'), '%')}
+FX Reserves (import months): {fmt(fundamentals.get('reserves_months'))}
+Inflation: {fmt(fundamentals.get('inflation'), '%')}
+Data year: {fundamentals.get('year', 'N/A')}""" if fundamentals else "No fundamentals data available."
+
+    head_text = "\n".join(
+        f"- [sentiment {h.get('sentiment', 0):.2f}] {h['headline']}" for h in headlines
+    ) if headlines else "No recent news."
+
+    mem_text = "\n\n".join(
+        f"### {m['title']}\n{m['content']}" for m in memories
+    ) if memories else "None."
+
+    research_section = f"\n\n## Web Research Brief\n{research_brief}" if research_brief else ""
+
+    system_prompt = f"""You are an independent sovereign credit analyst scoring {country_name} across six pillars.
+Score each pillar from 0 (worst) to 100 (best) based solely on your independent assessment of the data provided.
+
+Pillar definitions:
+- economic_strength: GDP growth, per-capita income, diversification, labour market, competitiveness
+- fiscal_position: Debt/GDP, deficit, revenue capacity, spending composition, fiscal sustainability
+- external_position: Current account, FX reserves, external debt, trade structure, BOP dynamics
+- monetary_policy: Inflation control, central bank credibility, exchange rate regime, FX stability
+- banking_sector: System stability, capital adequacy, NPL ratios, credit growth, systemic risk
+- political_governance: Institutional quality, rule of law, corruption, political stability, regulatory quality
+
+Typical ranges: AAA-equivalent 75-95 | BBB-equivalent 45-65 | B-equivalent 25-45 | CCC/D-equivalent 5-25.
+Score this country on its own merits. Do not anchor to any prior scores.
+
+Respond ONLY with a JSON object containing exactly these six integer scores, no commentary:
+{{"economic_strength": <0-100>, "fiscal_position": <0-100>, "external_position": <0-100>, "monetary_policy": <0-100>, "banking_sector": <0-100>, "political_governance": <0-100>}}"""
+
+    user_prompt = f"""## Country: {country_name}
+
+## World Bank Fundamentals
+{fund_text}
+
+## Recent News Headlines
+{head_text}
+
+## Analyst Memory Notes
+{mem_text}{research_section}"""
+
+    client = get_openai_client()
+    completion = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        temperature=0.4,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+
+    result = json.loads(completion.choices[0].message.content)
+    pillars = [
+        "economic_strength", "fiscal_position", "external_position",
+        "monetary_policy", "banking_sector", "political_governance",
+    ]
+    for p in pillars:
+        v = result.get(p)
+        if not isinstance(v, (int, float)) or not (0 <= v <= 100):
+            result[p] = 50
+    return {p: int(result[p]) for p in pillars}
+
+
 async def get_rating(
     country_name: str,
     fundamentals: dict,

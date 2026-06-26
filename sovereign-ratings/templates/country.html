@@ -5,6 +5,7 @@
 {% set pa = country.pillar_analysis | parse_json if country.pillar_analysis else {} %}
 {% set dc = country.daily_changes | parse_json if country.daily_changes else {} %}
 {% set f  = fundamentals[0] if fundamentals else none %}
+{% set as_map = country.agent_scores | parse_json if country.agent_scores else {} %}
 
 <a href="/" style="color:var(--blue);font-size:0.7rem;display:inline-block;margin-bottom:14px;letter-spacing:0.04em">← Dashboard</a>
 
@@ -151,7 +152,7 @@
 
 <!-- ═══ PILLAR MACRO (inline, repeated for each pillar) ════════════════════ -->
 
-{% macro pillar_tab(tab_id, label, score, color, metrics, pa_key) %}
+{% macro pillar_tab(tab_id, label, score, color, metrics, pa_key, as_list=none) %}
 <div id="tab-{{ tab_id }}" class="tab-panel" style="border-top:none">
 
   <!-- Score hero -->
@@ -173,6 +174,21 @@
     <div style="height:6px;background:var(--bg3);border-radius:1px;overflow:hidden">
       <div style="height:100%;width:{{ score|fmt_num(0,'','') if score is not none else 0 }}%;background:{{ color }};border-radius:1px;transition:width .6s"></div>
     </div>
+
+    {% if as_list and as_list | length > 0 %}
+    {% set trim = (as_list | length) >= 4 %}
+    <div style="margin-top:10px;display:flex;align-items:center;gap:5px;font-size:0.6rem;font-family:'JetBrains Mono',monospace;color:var(--ink3)">
+      <span style="font-size:0.52rem;text-transform:uppercase;letter-spacing:0.1em;margin-right:3px;opacity:0.7">Analysts:</span>
+      {% for s in as_list %}
+        {% if trim and (loop.first or loop.last) %}
+          <span style="text-decoration:line-through;opacity:0.35">{{ s }}</span>
+        {% else %}
+          <span style="color:var(--ink2);font-weight:600">{{ s }}</span>
+        {% endif %}
+        {% if not loop.last %}<span style="opacity:0.2;font-size:0.5rem">|</span>{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
   <!-- Data metrics grid -->
@@ -241,7 +257,7 @@
     ('GDP per Capita',  f.gdp_per_capita | fmt_num(0, '', '$') if f else '—'),
     ('Inflation',       f.inflation   | fmt_num(1, '%')   if f else '—'),
   ],
-  'economic_strength'
+  'economic_strength', as_map.get('economic_strength')
 ) }}
 
 
@@ -252,7 +268,7 @@
     ('Debt / GDP',      f.debt_gdp    | fmt_num(1, '%')   if f else '—'),
     ('Deficit / GDP',   f.deficit_gdp | fmt_num(1, '%')   if f else '—'),
   ],
-  'fiscal_position'
+  'fiscal_position', as_map.get('fiscal_position')
 ) }}
 
 
@@ -263,7 +279,7 @@
     ('Current Account / GDP', f.ca_gdp          | fmt_num(1, '%')     if f else '—'),
     ('FX Reserves',           f.reserves_months | fmt_num(1, ' months') if f else '—'),
   ],
-  'external_position'
+  'external_position', as_map.get('external_position')
 ) }}
 
 
@@ -274,7 +290,7 @@
     ('Inflation',   f.inflation       | fmt_num(1, '%')     if f else '—'),
     ('FX Reserves', f.reserves_months | fmt_num(1, ' months') if f else '—'),
   ],
-  'monetary_policy'
+  'monetary_policy', as_map.get('monetary_policy')
 ) }}
 
 
@@ -282,7 +298,7 @@
 {{ pillar_tab(
   'banking', 'Banking Sector', country.score_banking, '#b02020',
   [],
-  'banking_sector'
+  'banking_sector', as_map.get('banking_sector')
 ) }}
 
 
@@ -290,7 +306,7 @@
 {{ pillar_tab(
   'politics', 'Political Governance', country.score_political, '#1a6830',
   [],
-  'political_governance'
+  'political_governance', as_map.get('political_governance')
 ) }}
 
 

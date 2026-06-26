@@ -220,13 +220,15 @@ Rating: {rating['rating']} | Outlook: {rating['outlook']} | Composite score: {ra
     return edit
 
 
-async def _run_blurb_scan(scope: str, news_sql: str, period_label: str):
+async def _run_blurb_scan(scope: str, news_sql: str, period_label: str, iso2_filter: set | None = None):
     print(f"[blurb_updater] Starting {scope} blurb scan...")
     db = get_db()
 
     _clear_stale_updates(db)
 
     countries = db.execute("SELECT * FROM countries").fetchall()
+    if iso2_filter is not None:
+        countries = [c for c in countries if c["iso2"] in iso2_filter]
     with_news, candidates, updated, errors = 0, 0, 0, 0
 
     for c in countries:
@@ -318,17 +320,19 @@ async def _run_blurb_scan(scope: str, news_sql: str, period_label: str):
           f"{candidates} candidates, {updated} updated, {errors} errors")
 
 
-async def run_daily_blurb_scan():
+async def run_daily_blurb_scan(iso2_filter: set | None = None):
     await _run_blurb_scan(
         scope="daily",
         news_sql="SELECT * FROM news_cache WHERE country_id=? AND date(fetched_at)=date('now')",
         period_label="today",
+        iso2_filter=iso2_filter,
     )
 
 
-async def run_weekly_blurb_scan():
+async def run_weekly_blurb_scan(iso2_filter: set | None = None):
     await _run_blurb_scan(
         scope="weekly",
         news_sql="SELECT * FROM news_cache WHERE country_id=? AND fetched_at >= datetime('now', '-7 days')",
         period_label="the last 7 days",
+        iso2_filter=iso2_filter,
     )

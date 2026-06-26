@@ -129,6 +129,7 @@ def _create_schema(conn):
         "ALTER TABLE ratings ADD COLUMN default_history TEXT",
         "ALTER TABLE ratings ADD COLUMN pending_review INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE ratings ADD COLUMN daily_changes TEXT",
+        "ALTER TABLE ratings ADD COLUMN agent_scores TEXT",
         "ALTER TABLE scan_log ADD COLUMN scope TEXT NOT NULL DEFAULT 'daily'",
     ]:
         try:
